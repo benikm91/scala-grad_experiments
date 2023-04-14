@@ -1,6 +1,6 @@
 package scalagrad.reverse.eval
 
-import scalagrad.reverse.delta._
+import scalagrad.reverse.dual.delta._
 
 object Eval:
 

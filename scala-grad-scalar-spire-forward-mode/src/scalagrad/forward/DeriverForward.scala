@@ -3,26 +3,25 @@ package scalagrad.forward
 import scalagrad.api.Deriver
 import scalagrad.api.DeriverWithPrecision
 import scala.reflect.ClassTag
-import scala.math.Fractional
 import scala.runtime.Tuples
 
-import scalagrad.fractional.api.DeriverFractional
-
+import scalagrad.api.DeriverSpireNumeric
 import scalagrad.forward.dual.DualNumber
+import spire.math.Numeric
 
 trait DeriverForward[fT2] extends Deriver[fT2]
 
-object DeriverForward extends DeriverFractional:
+object DeriverForward extends DeriverSpireNumeric:
 
     type DNum[V] = DualNumber[V]
 
-    given fractional[P] (using frac: Fractional[P]): DeriverForward[DNum[P] => DNum[P]] with
+    given spireNumeric[P] (using frac: Numeric[P]): DeriverForward[DNum[P] => DNum[P]] with
         override type dfInput = P
         override type dfOutput = P
         override def derive(f: fT): dfT = 
             x => f(DualNumber[P](x, frac.one)).dv
 
-    given fractional2[P] (using frac: Fractional[P]): DeriverForward[(DNum[P], DNum[P]) => DNum[P]] with
+    given spireNumeric2[P] (using frac: Numeric[P]): DeriverForward[(DNum[P], DNum[P]) => DNum[P]] with
         override type dfInput = (P, P)
         override type dfOutput = (P, P)
         override def derive(f: fT): dfT = 
@@ -31,7 +30,7 @@ object DeriverForward extends DeriverFractional:
                 f(DualNumber[P](x1, frac.zero), DualNumber[P](x2, frac.one)).dv
             )
 
-    given fractionalVector[P] (using frac: Fractional[P]): DeriverForward[Vector[DNum[P]] => DNum[P]] with
+    given spireNumericVector[P] (using frac: Numeric[P]): DeriverForward[Vector[DNum[P]] => DNum[P]] with
         override type dfInput = Vector[P]
         override type dfOutput = Vector[P]
         override def derive(f: fT): dfT = 
@@ -46,16 +45,3 @@ object DeriverForward extends DeriverFractional:
                 ).toVector
     
     
-    // given fractionalArray[P : ClassTag] (using frac: Fractional[P]): DeriverForward[Array[DNum[P]] => DNum[P]] with
-    //     override type dfInput = Array[P]
-    //     override type dfOutput = Array[P]
-    //     override def derive(f: fT): dfT = 
-    //         (xs) =>
-    //             (
-    //                 for (i <- xs.indices) yield f((
-    //                     for {
-    //                         (x, j) <- xs.zipWithIndex
-    //                         dxi = if i == j then frac.one else frac.zero
-    //                     } yield DualNumber[P](x, dxi)
-    //                 ).toArray).dv
-    //             ).toArray

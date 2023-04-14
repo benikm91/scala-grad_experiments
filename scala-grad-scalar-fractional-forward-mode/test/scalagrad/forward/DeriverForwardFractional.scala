@@ -12,6 +12,7 @@ import org.scalacheck.Prop.forAllNoShrink
 import scala.math.Fractional
 import scalagrad.api.ScalaGrad
 
+import scalagrad.forward.dual.DualNumber
 class DeriverForwardFractionalTest extends AnyWordSpec with should.Matchers {
 
   /**

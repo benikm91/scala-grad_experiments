@@ -1,4 +1,4 @@
-package scalagrad.forward
+package scalagrad.forward.dual
 
 import scala.math.Fractional
 
