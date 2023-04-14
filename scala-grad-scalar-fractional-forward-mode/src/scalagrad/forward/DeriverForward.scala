@@ -1,7 +1,6 @@
 package scalagrad.forward
 
 import scalagrad.api.Deriver
-import scalagrad.api.DeriverWithPrecision
 import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
