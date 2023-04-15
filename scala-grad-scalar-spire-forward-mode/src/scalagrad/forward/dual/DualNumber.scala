@@ -24,7 +24,6 @@ import algebra.ring.Signed.Negative
 import algebra.ring.AdditiveGroup
 import scalagrad.api.Num
 import scalagrad.api.DeriverSpireNumeric
-import scalagrad.api.DeriverSpireNumeric.given
 import spire.algebra.Trig
 
 case class DualNumber[T](value: T, derivative: T):
@@ -315,6 +314,7 @@ object DualNumber:
                 (du * v - u * dv) / (v * v)
             DualNumber[A](x.v / y.v, quotientRule(x.v, x.dv, y.v, y.dv))
 
+    // This breaks implicit search. I think because Numeric is a Ring therefore it loops on itself.
     given[A](using
         ring: Ring[DualNumber[A]],
         additiveAbGroup: AdditiveAbGroup[DualNumber[A]],

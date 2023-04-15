@@ -12,13 +12,13 @@ import scalagrad.reverse.dual.DualDelta
 import scalagrad.reverse.eval.Eval
 
 
-trait DeriverReverse[fT2] extends Deriver[fT2]
+trait DeriverFractionalReverse[fT2] extends Deriver[fT2]
 
-object DeriverReverse extends DeriverFractional:
+object DeriverFractionalReverse extends DeriverFractional:
 
     type DNum[V] = DualDelta[V]
 
-    given fractional[P] (using frac: Fractional[P]): DeriverReverse[DNum[P] => DNum[P]] with
+    given fractional[P] (using frac: Fractional[P]): DeriverFractionalReverse[DNum[P] => DNum[P]] with
         override type dfInput = P
         override type dfOutput = P
         override def derive(f: fT): dfT = 
@@ -33,7 +33,7 @@ object DeriverReverse extends DeriverFractional:
                 dfs(keyX)
             }
 
-    given fractional2[P] (using frac: Fractional[P]): DeriverReverse[(DNum[P], DNum[P]) => DNum[P]] with
+    given fractional2[P] (using frac: Fractional[P]): DeriverFractionalReverse[(DNum[P], DNum[P]) => DNum[P]] with
         override type dfInput = (P, P)
         override type dfOutput = (P, P)
         override def derive(f: fT): dfT = 
@@ -50,7 +50,7 @@ object DeriverReverse extends DeriverFractional:
                 (dfs(keyX1), dfs(keyX2))
             }
 
-    given fractionalVector[P] (using frac: Fractional[P]): DeriverReverse[Vector[DNum[P]] => DNum[P]] with
+    given fractionalVector[P] (using frac: Fractional[P]): DeriverFractionalReverse[Vector[DNum[P]] => DNum[P]] with
         override type dfInput = Vector[P]
         override type dfOutput = Vector[P]
         override def derive(f: fT): dfT = 

@@ -27,6 +27,7 @@ lazy val scalaGradScalarFractionalApi = (project in file("./scala-grad-scalar-fr
   .settings(
     name := "scala-grad-scalar-fractional-api",
     basicSettings,
+    scalaTestSettings,
   ).dependsOn(
     scalaGradApi
   )
@@ -35,9 +36,9 @@ lazy val scalaGradScalarFractionalForwardMode = (project in file("./scala-grad-s
   .settings(
     name := "scala-grad-scalar-fractional-forward-mode",
     basicSettings,
-    scalaTestSettings,
   ).dependsOn(
-    scalaGradScalarFractionalApi
+    scalaGradScalarFractionalApi,
+    scalaGradScalarFractionalApi % "test->test",
   )
   
 lazy val scalaGradScalarFractionalReverseMode = (project in file("./scala-grad-scalar-fractional-reverse-mode"))
@@ -46,7 +47,7 @@ lazy val scalaGradScalarFractionalReverseMode = (project in file("./scala-grad-s
     basicSettings,
     scalaTestSettings,
   ).dependsOn(
-    scalaGradScalarFractionalApi
+    scalaGradScalarFractionalApi % "compile->compile;test->test"
   )
 
 lazy val scalaGradScalarSpireApi = (project in file("./scala-grad-scalar-spire-api"))
@@ -55,7 +56,7 @@ lazy val scalaGradScalarSpireApi = (project in file("./scala-grad-scalar-spire-a
     basicSettings,
     spireDependency,
   ).dependsOn(
-    scalaGradApi
+    scalaGradApi % "compile->compile;test->test"
   )
   
 lazy val scalaGradScalarSpireForwardMode = (project in file("./scala-grad-scalar-spire-forward-mode"))
@@ -64,7 +65,7 @@ lazy val scalaGradScalarSpireForwardMode = (project in file("./scala-grad-scalar
     basicSettings,
     scalaTestSettings,
   ).dependsOn(
-    scalaGradScalarSpireApi
+    scalaGradScalarSpireApi % "compile->compile;test->test"
   )
   
 lazy val root = (project in file("."))

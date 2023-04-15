@@ -1,4 +1,4 @@
-package scalagrad.forward
+package scalagrad.api.test
 
 import collection.mutable.Stack
 import org.scalatest.*
@@ -9,12 +9,28 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAllNoShrink
-import scala.math.Fractional
+
+import scalagrad.api.Deriver
 import scalagrad.api.ScalaGrad
 
-import scalagrad.forward.dual.DualNumber
-class DeriverForwardFractionalTest extends AnyWordSpec with should.Matchers {
+abstract class DeriveFractionalDoubleDoubleTests(val name: String) extends AnyWordSpec with should.Matchers:
 
+  type DNum[P]
+  given fractionalDNum: Fractional[DNum[Double]]
+  type DoubleDoubleDeriver = Deriver[(DNum[Double], DNum[Double]) => DNum[Double]] {
+    type dfInput = (Double, Double)
+    type dfOutput = (Double, Double)
+  }
+  val deriver: DoubleDoubleDeriver
+
+  def generateDoubleInReasonableRange(min: Double, max: Double): Gen[Double] =
+    def generatePositiveDoubleInReasonableRange: Gen[Double] = Gen.choose(min, max)
+    def generateNegativeDoubleInReasonableRange: Gen[Double] = generatePositiveDoubleInReasonableRange.map(x => -x)
+      Gen.oneOf(
+        generatePositiveDoubleInReasonableRange,
+        generateNegativeDoubleInReasonableRange
+      )
+    
   /**
    * Tests calculation of derivative for f by comparing it to its approximation.
    * As the approximation can not be made arbitrary precise, generated numbers are restricted.
@@ -32,30 +48,21 @@ class DeriverForwardFractionalTest extends AnyWordSpec with should.Matchers {
     max: Double = 1e+3,
     tolerance: Double = 1e-2,
   ): Unit =
-    def generateDoubleInReasonableRange: Gen[Double] =
-      def generatePositiveDoubleInReasonableRange: Gen[Double] = Gen.choose(min, max)
-      def generateNegativeDoubleInReasonableRange: Gen[Double] = generatePositiveDoubleInReasonableRange.map(x => -x)
-      Gen.oneOf(
-        generatePositiveDoubleInReasonableRange,
-        generateNegativeDoubleInReasonableRange
-      )
-    forAll(generateDoubleInReasonableRange, generateDoubleInReasonableRange) { (x1: Double, x2: Double) =>
+    forAll(generateDoubleInReasonableRange(min, max), generateDoubleInReasonableRange(min, max)) { (x1: Double, x2: Double) =>
       whenever(
         min <= x1.abs && x1.abs <= max &&
         min <= x2.abs && x2.abs <= max
       ) {
         val approxDx1: Double = (f(x1 + e, x2) - f(x1, x2)) / e
         val approxDx2: Double = (f(x1, x2 + e) - f(x1, x2)) / e
-        import DeriverForward.given
-        val lala = summon[Fractional[DualNumber[Double]]]
-        val df = ScalaGrad.derive(f[DualNumber[Double]])
-        val (dx1, dx2) = df(x1, x2)
+        val df = ScalaGrad.derive(f[DNum[Double]])(using deriver)
+        val (dx1: Double, dx2: Double) = df(x1, x2)
         dx1 should be(approxDx1 +- tolerance)
         dx2 should be(approxDx2 +- tolerance)
       }
     }
 
-  "Forward-mode Dual Numbers Basic-Operations" should {
+  f"${name} deriviation" should {
     "work for addition" in {
       testApproximation([T] => (x1: T, x2: T) => (f: Fractional[T]) ?=> 
         import f.*
@@ -87,6 +94,3 @@ class DeriverForwardFractionalTest extends AnyWordSpec with should.Matchers {
       )
     }
   }
-
-}
-
