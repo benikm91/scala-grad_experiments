@@ -9,19 +9,19 @@ import scalagrad.api.DeriverSpireNumeric
 import scalagrad.forward.dual.DualNumber
 import spire.math.Numeric
 
-trait DeriverForward[fT2] extends Deriver[fT2]
+trait DeriverSpireNumericForward[fT2] extends Deriver[fT2]
 
-object DeriverForward extends DeriverSpireNumeric:
+object DeriverSpireNumericForward extends DeriverSpireNumeric:
 
     type DNum[V] = DualNumber[V]
 
-    given spireNumeric[P] (using frac: Numeric[P]): DeriverForward[DNum[P] => DNum[P]] with
+    given spireNumeric[P] (using frac: Numeric[P]): DeriverSpireNumericForward[DNum[P] => DNum[P]] with
         override type dfInput = P
         override type dfOutput = P
         override def derive(f: fT): dfT = 
             x => f(DualNumber[P](x, frac.one)).dv
 
-    given spireNumeric2[P] (using frac: Numeric[P]): DeriverForward[(DNum[P], DNum[P]) => DNum[P]] with
+    given spireNumeric2[P] (using frac: Numeric[P]): DeriverSpireNumericForward[(DNum[P], DNum[P]) => DNum[P]] with
         override type dfInput = (P, P)
         override type dfOutput = (P, P)
         override def derive(f: fT): dfT = 
@@ -30,7 +30,7 @@ object DeriverForward extends DeriverSpireNumeric:
                 f(DualNumber[P](x1, frac.zero), DualNumber[P](x2, frac.one)).dv
             )
 
-    given spireNumericVector[P] (using frac: Numeric[P]): DeriverForward[Vector[DNum[P]] => DNum[P]] with
+    given spireNumericVector[P] (using frac: Numeric[P]): DeriverSpireNumericForward[Vector[DNum[P]] => DNum[P]] with
         override type dfInput = Vector[P]
         override type dfOutput = Vector[P]
         override def derive(f: fT): dfT = 

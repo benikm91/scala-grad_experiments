@@ -13,22 +13,25 @@ import org.scalacheck.Prop.forAllNoShrink
 import scalagrad.api.Deriver
 import scalagrad.api.ScalaGrad
 
-abstract class DeriveFractionalDoubleDoubleTests(val name: String) extends AnyWordSpec with should.Matchers:
+import spire.math.Numeric
+import spire.implicits.*
+
+abstract class DeriveSpireNumericDoubleDoubleTests(val name: String) extends AnyWordSpec with should.Matchers:
 
   type DNum[P]
-  given fractionalDNum: Fractional[DNum[Double]]
+  given spireNumericDNum: Numeric[DNum[Double]]
   type DoubleDoubleDeriver = Deriver[(DNum[Double], DNum[Double]) => DNum[Double]] {
     type dfInput = (Double, Double)
     type dfOutput = (Double, Double)
   }
   val deriver: DoubleDoubleDeriver
 
+  def generatePositiveDoubleInReasonableRange(min: Double, max: Double): Gen[Double] = Gen.choose(min, max)
+  def generateNegativeDoubleInReasonableRange(min: Double, max: Double): Gen[Double] = generatePositiveDoubleInReasonableRange(min, max).map(x => -x)
   def generateDoubleInReasonableRange(min: Double, max: Double): Gen[Double] =
-    def generatePositiveDoubleInReasonableRange: Gen[Double] = Gen.choose(min, max)
-    def generateNegativeDoubleInReasonableRange: Gen[Double] = generatePositiveDoubleInReasonableRange.map(x => -x)
       Gen.oneOf(
-        generatePositiveDoubleInReasonableRange,
-        generateNegativeDoubleInReasonableRange
+          generatePositiveDoubleInReasonableRange(min, max),
+          generateNegativeDoubleInReasonableRange(min, max)
       )
     
   /**
@@ -42,16 +45,15 @@ abstract class DeriveFractionalDoubleDoubleTests(val name: String) extends AnyWo
    * @param tolerance When comparing calculated derivative and approximated derivative, this tolerance is used.
    */
   def testApproximation(
-    f: [T] => (T, T) => Fractional[T] ?=> T,
+    f: [T] => (T, T) => Numeric[T] ?=> T,
+    generator: Gen[Double],
+    isLegalGeneratorValue: Double => Boolean,
     e: Double = 1e-6,
-    min: Double = 1e-3,
-    max: Double = 1e+3,
     tolerance: Double = 1e-2,
   ): Unit =
-    forAll(generateDoubleInReasonableRange(min, max), generateDoubleInReasonableRange(min, max)) { (x1: Double, x2: Double) =>
+    forAll(generator, generator) { (x1: Double, x2: Double) =>
       whenever(
-        min <= x1.abs && x1.abs <= max &&
-        min <= x2.abs && x2.abs <= max
+        isLegalGeneratorValue(x1) && isLegalGeneratorValue(x2)
       ) {
         val approxDx1: Double = (f(x1 + e, x2) - f(x1, x2)) / e
         val approxDx2: Double = (f(x1, x2 + e) - f(x1, x2)) / e
@@ -62,35 +64,44 @@ abstract class DeriveFractionalDoubleDoubleTests(val name: String) extends AnyWo
       }
     }
 
+  val min: Double = 1e-3
+  val max: Double = 1e+3
+  def isInRange(x: Double): Boolean = min <= x && x <= max
+  
   f"${name} deriviation" should {
     "work for addition" in {
-      testApproximation([T] => (x1: T, x2: T) => (f: Fractional[T]) ?=> 
-        import f.*
-        x1 + x2
+        testApproximation([T] => (x1: T, x2: T) => (num: Numeric[T]) ?=> 
+          x1 + x2,
+        generator = generateDoubleInReasonableRange(min, max),
+        isLegalGeneratorValue = (x: Double) => isInRange(x) || isInRange(-x),
       )
     }
     "work for subtraction" in {
-      testApproximation([T] => (x1: T, x2: T) => (f: Fractional[T]) ?=> 
-        import f.*
-        x1 - x2
+        testApproximation([T] => (x1: T, x2: T) => (num: Numeric[T]) ?=> 
+          x1 - x2,
+        generator = generateDoubleInReasonableRange(min, max),
+        isLegalGeneratorValue = (x: Double) => isInRange(x) || isInRange(-x),
       )
     }
     "work for multiply" in {
-      testApproximation([T] => (x1: T, x2: T) => (f: Fractional[T]) ?=> 
-        import f.*
-        x1 * x2
+        testApproximation([T] => (x1: T, x2: T) => (num: Numeric[T]) ?=> 
+          x1 * x2,
+        generator = generateDoubleInReasonableRange(min, max),
+        isLegalGeneratorValue = (x: Double) => isInRange(x) || isInRange(-x),
       )
     }
     "work for division" in {
-      testApproximation([T] => (x1: T, x2: T) => (f: Fractional[T]) ?=> 
-        import f.*
-        x1 / x2
+        testApproximation([T] => (x1: T, x2: T) => (num: Numeric[T]) ?=> 
+          x1 / x2,
+        generator = generateDoubleInReasonableRange(min, max),
+        isLegalGeneratorValue = (x: Double) => isInRange(x) || isInRange(-x),
       )
     }
     "work with a mixture of all operations" in {
-      testApproximation([T] => (x1: T, x2: T) => (f: Fractional[T]) ?=> 
-        import f.*
-        (x1 + x2) * (x2 / x1) + x1 - x2 * (x2 + x1 - x1 * x2) / x2
+        testApproximation([T] => (x1: T, x2: T) => (num: Numeric[T]) ?=> 
+          (x1 + x2) * (x2 / x1) + x1 - x2 * (x2 + x1 - x1 * x2) / x2,
+        generator = generateDoubleInReasonableRange(min, max),
+        isLegalGeneratorValue = (x: Double) => isInRange(x) || isInRange(-x),
       )
     }
   }

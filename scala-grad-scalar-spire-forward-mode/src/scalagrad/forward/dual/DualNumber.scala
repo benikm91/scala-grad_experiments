@@ -168,7 +168,10 @@ object DualNumber:
         override def toByte(a: DualNumber[T]): Byte = num.toByte(a.v)
 
         override def nroot(a: DualNumber[T], n: Int): DualNumber[T] = 
-            chain(x => num.nroot(x, n), x => num.fpow(x, num.one / num.fromInt(n - 1)) / n)(a)
+            def dnroot(x: T) = 
+                val denominator = n * num.fpow((num.nroot(x, n)), num.fromInt(n - 1))
+                num.one / denominator
+            chain(x => num.nroot(x, n), dnroot)(a)
 
         override def fromByte(n: Byte): DualNumber[T] = lift(num.fromByte(n))
 

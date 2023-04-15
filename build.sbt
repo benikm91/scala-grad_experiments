@@ -55,8 +55,9 @@ lazy val scalaGradScalarSpireApi = (project in file("./scala-grad-scalar-spire-a
     name := "scala-grad-scalar-spire-api",
     basicSettings,
     spireDependency,
+    scalaTestSettings,
   ).dependsOn(
-    scalaGradApi % "compile->compile;test->test"
+    scalaGradApi,
   )
   
 lazy val scalaGradScalarSpireForwardMode = (project in file("./scala-grad-scalar-spire-forward-mode"))
@@ -65,7 +66,8 @@ lazy val scalaGradScalarSpireForwardMode = (project in file("./scala-grad-scalar
     basicSettings,
     scalaTestSettings,
   ).dependsOn(
-    scalaGradScalarSpireApi % "compile->compile;test->test"
+    scalaGradScalarSpireApi,
+    scalaGradScalarSpireApi % "test->test",
   )
   
 lazy val root = (project in file("."))
