@@ -43,4 +43,16 @@ abstract class DeriveSpireNumericDoubleTests(val name: String) extends AnyWordSp
         }
       }
     }
+    "work for negate" in {
+      val (min, max) = (1e-3, 1e+3)
+      forAll(Gen.choose(min, max)) { (x: Double) =>
+        def f = [T] => (x: T) => (num: Numeric[T]) ?=> num.negate(x)
+        whenever(min <= x && x <= max) {
+          val approxDx: Double = approx(f[Double], x)
+          val df = ScalaGrad.derive(f[DNum[Double]])(using deriver)
+          val dx = df(x)
+          dx should be(approxDx +- tolerance)
+        }
+      }
+    }
   }

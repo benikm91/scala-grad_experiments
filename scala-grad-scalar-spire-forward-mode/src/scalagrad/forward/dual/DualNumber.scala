@@ -126,7 +126,6 @@ object DualNumber:
             val dfpow = num.fpow(a.v, b.v - 1) * (b.v * a.dv + a.v * log(a.v) * b.dv)
             DualNumber(num.fpow(a.v, b.v), dfpow)
 
-
         override def fromDouble(n: Double): DualNumber[T] = lift(num.fromDouble(n))
 
         override def fromLong(n: Long): DualNumber[T] = lift(num.fromLong(n))
