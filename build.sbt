@@ -14,6 +14,7 @@ lazy val spireDependency = Seq(
 
 lazy val basicSettings = Seq(
     Compile / scalaSource := baseDirectory.value / "src",
+    Compile / resourceDirectory := baseDirectory.value / "res",
     Test / scalaSource := baseDirectory.value / "test",
 )
 
@@ -73,6 +74,12 @@ lazy val scalaGradScalarSpireForwardMode = (project in file("./scala-grad-scalar
     scalaGradScalarSpireApi % "test->test",
   )
   
+lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-learning"))
+  .settings(
+      name := "showcase-deep-learning",
+      basicSettings,
+    )
+
 lazy val root = (project in file("."))
   .settings(
     name := "scala-grad",
@@ -85,4 +92,6 @@ lazy val root = (project in file("."))
     // Spire Numeric
     scalaGradScalarSpireApi,
     scalaGradScalarSpireForwardMode,
+    // Showcases
+    showcaseDeepLearning,
   )
