@@ -4,10 +4,17 @@ import scalagrad.api.ScalaGrad
 import scalagrad.api.Deriver
 import spire.math.Numeric
 import spire.implicits._
+import scalagrad.forward.dual.DualNumber
+import scalagrad.forward.dual.DualNumber.given
+import algebra.ring.Ring
+import algebra.ring.Field
+import spire.algebra.Trig
 
 object Main {
     def main(args: Array[String]): Unit = {
         import DeriverForward.given
+
+        summon[Numeric[DualNumber[Double]]]
 
         def f1[T: Numeric](x: T): T = 
             x * x
@@ -28,11 +35,17 @@ object Main {
         def fnegate[T: Numeric](x: T): T = -x
         val dfnegate = ScalaGrad.derive(fnegate[DeriverForward.DNum[Double]])
         println(dfnegate(10.0))
-
-        // def ffpow[T: Numeric](x: T) = 
-        //     x.fpow(summon[Numeric[T]].fromDouble(2.0))
-        // 
-        // val dffpow = ScalaGrad.derive(ffpow[DeriverForward.DNum[Double]])
-        // println(dffpow(2.0) + " " + dffpow(4.0))
+        
+        def fcos[T: Trig](x: T): T = 
+            summon[Trig[T]].cos(x)
+        val dfcos = ScalaGrad.derive(fcos[DeriverForward.DNum[Double]])
+        val pi = summon[Trig[Double]].pi
+        println(dfcos(0.0) + " " + dfcos(pi / 2) + " " + dfcos(pi))
+        
+        def ffpow[T: Numeric](x: T) = 
+            x.fpow(summon[Numeric[T]].fromDouble(2.0))
+        
+        val dffpow = ScalaGrad.derive(ffpow[DeriverForward.DNum[Double]])
+        println(dffpow(2.0) + " " + dffpow(4.0))
     }
 }
