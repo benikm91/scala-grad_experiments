@@ -53,6 +53,15 @@ lazy val scalaGradScalarFractionalReverseMode = (project in file("./scala-grad-s
     scalaGradScalarFractionalApi % "compile->compile;test->test"
   )
 
+lazy val scalaGradScalarFractionalReverseModeNoLet = (project in file("./scala-grad-scalar-fractional-reverse-mode-no-let"))
+  .settings(
+    name := "scala-grad-scalar-fractional-reverse-mode-no-let",
+    basicSettings,
+    scalaTestSettings,
+  ).dependsOn(
+    scalaGradScalarFractionalApi % "compile->compile;test->test"
+  )
+
 lazy val scalaGradScalarSpireApi = (project in file("./scala-grad-scalar-spire-api"))
   .settings(
     name := "scala-grad-scalar-spire-api",
@@ -81,6 +90,7 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
     ).dependsOn(
       scalaGradScalarFractionalForwardMode,
       scalaGradScalarFractionalReverseMode,
+      scalaGradScalarFractionalReverseModeNoLet,
     )
 
 lazy val root = (project in file("."))
@@ -92,6 +102,7 @@ lazy val root = (project in file("."))
     scalaGradScalarFractionalApi,
     scalaGradScalarFractionalForwardMode,
     scalaGradScalarFractionalReverseMode,
+    scalaGradScalarFractionalReverseModeNoLet,
     // Spire Numeric
     scalaGradScalarSpireApi,
     scalaGradScalarSpireForwardMode,

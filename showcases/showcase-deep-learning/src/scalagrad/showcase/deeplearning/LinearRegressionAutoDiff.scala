@@ -7,6 +7,7 @@ import scalagrad.forward.dual.DualNumber
 import scalagrad.reverse.dual.DualDelta
 import scalagrad.reverse.dual.delta.Delta
 import scalagrad.showcase.deeplearning.Util.*
+import scalagrad.reverse.dual.delta.DeltaMonad
 
 @main def linearRegressionAutoDiff() = 
 
@@ -73,9 +74,25 @@ import scalagrad.showcase.deeplearning.Util.*
     time {
         println("Reverse mode")
         import DeriverFractionalReverse.given
+        import scalagrad.reverse.dual.delta.Delta
+        import scalagrad.reverse.dual.DualDelta
         val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
             xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 
             ys_ss.map(DualDelta(_, DualDelta.ZeroM[Double])
+        )))
+        val (w0, ws) = gradientDescent(dLoss)
+        val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)
+        println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    }
+    time {
+        println("Reverse mode no let")
+        import scalagrad.reverse.nolet.DeriverFractionalReverse
+        import DeriverFractionalReverse.given
+        import scalagrad.reverse.nolet.dual.delta.Delta
+        import scalagrad.reverse.nolet.dual.DualDelta
+        val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
+            xs_ss.map(_.map(DualDelta(_, Delta.Zero))), 
+            ys_ss.map(DualDelta(_, Delta.Zero)
         )))
         val (w0, ws) = gradientDescent(dLoss)
         val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)

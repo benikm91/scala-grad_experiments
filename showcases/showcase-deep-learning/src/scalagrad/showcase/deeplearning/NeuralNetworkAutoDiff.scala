@@ -1,11 +1,7 @@
 package scalagrad.showcase.deeplearning
 
 import scala.io.Source
-import scalagrad.forward.DeriverFractionalForward
-import scalagrad.reverse.DeriverFractionalReverse
 import scalagrad.api.ScalaGrad
-import scalagrad.forward.dual.DualNumber
-import scalagrad.reverse.dual.DualDelta
 import scalagrad.showcase.deeplearning.Util.*
 
 @main def neuralNetworkAutoDiff() = 
@@ -112,24 +108,31 @@ import scalagrad.showcase.deeplearning.Util.*
     
     val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10000) _
 
-    time {
-        println("Forward mode")
-        import DeriverFractionalForward.given
-        val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
-            xs_ss.map(_.map(DualNumber(_, 0.0))), 
-            ys_ss.map(DualNumber(_, 0.0)
-        )))
-        val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
-        val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)
-        println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
-    }
+    // time {
+    //     println("Forward mode")
+    //     import scalagrad.forward.DeriverFractionalForward
+    //     import scalagrad.forward.dual.DualNumber
+    //     import DeriverFractionalForward.given
+    //     val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
+    //         xs_ss.map(_.map(DualNumber(_, 0.0))), 
+    //         ys_ss.map(DualNumber(_, 0.0)
+    //     )))
+    //     val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
+    //     val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)
+    //     println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    // }
 
     time {
         println("Reverse mode")
+        import scalagrad.reverse.nolet.DeriverFractionalReverse
+        import scalagrad.reverse.nolet.dual.delta.Delta
+        import scalagrad.reverse.nolet.dual.DualDelta
         import DeriverFractionalReverse.given
         val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
-            xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 
-            ys_ss.map(DualDelta(_, DualDelta.ZeroM[Double])
+            xs_ss.map(_.map(DualDelta(_, Delta.Zero))), 
+            ys_ss.map(DualDelta(_, Delta.Zero)
+            // xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 
+            // ys_ss.map(DualDelta(_, DualDelta.ZeroM[Double])
         )))
         val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
         val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)

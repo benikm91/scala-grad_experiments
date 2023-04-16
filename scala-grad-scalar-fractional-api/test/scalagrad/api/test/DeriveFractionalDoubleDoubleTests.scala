@@ -68,4 +68,12 @@ abstract class DeriveFractionalDoubleDoubleTests(val name: String) extends AnyWo
         (x1 + x2) * (x2 / x1) + x1 - x2 * (x2 + x1 - x1 * x2) / x2
       )
     }
+    "work with intermediate variables" in {
+      testF([T] => (x1: T, x2: T) => (f: Fractional[T]) ?=> 
+        import f.*
+        val z1 = (x1 + x2) 
+        val z2 = (x2 / x1)
+        z1 * z2 + z2 / z1
+      )
+    }
   }
