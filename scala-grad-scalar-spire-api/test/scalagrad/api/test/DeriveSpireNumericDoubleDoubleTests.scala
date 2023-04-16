@@ -17,6 +17,7 @@ import spire.math.Numeric
 import spire.implicits.*
 
 import scalagrad.test.util.TestUtil.*
+import scalagrad.numerical.DeriverNumerical.given
 
 abstract class DeriveSpireNumericDoubleDoubleTests(val name: String) extends AnyWordSpec with should.Matchers:
 
@@ -34,7 +35,7 @@ abstract class DeriveSpireNumericDoubleDoubleTests(val name: String) extends Any
       whenever(isReasonableDouble(x1) && isReasonableDouble(x2)) {
         val df = ScalaGrad.derive(f[DNum[Double]])(using deriver)
         val (dx1, dx2) = df(x1, x2)
-        val (approxDx1, approxDx2) = approx2(f[Double], x1, x2)
+        val (approxDx1, approxDx2) = ScalaGrad.derive(f[Double])(x1, x2)
         dx1 should be(approxDx1 +- tolerance)
         dx2 should be(approxDx2 +- tolerance)
       }
