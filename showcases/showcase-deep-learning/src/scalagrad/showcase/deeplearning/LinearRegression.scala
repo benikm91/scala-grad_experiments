@@ -1,5 +1,7 @@
 package scalagrad.showcase.deeplearning
 
+import scalagrad.showcase.deeplearning.Util.*
+
 @main def linearRegression() = 
 
     val fishs = FishDataSet.load
@@ -33,6 +35,8 @@ package scalagrad.showcase.deeplearning
     
     val initYsHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, initW0, initWs)), ys_mean, ys_std)
     println(f"${Math.sqrt(loss(ys, initYsHat))}g  -- RMSE with initial weights")
-    val (w0, ws) = gradientDescent(xs_ss, ys_ss, initW0, initWs, 0.01, 100)
-    val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)
-    println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    time {
+        val (w0, ws) = gradientDescent(xs_ss, ys_ss, initW0, initWs, 0.01, 100)
+        val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)
+        println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    }

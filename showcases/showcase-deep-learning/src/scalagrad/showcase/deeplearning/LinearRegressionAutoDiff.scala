@@ -6,17 +6,9 @@ import scalagrad.reverse.DeriverFractionalReverse
 import scalagrad.forward.dual.DualNumber
 import scalagrad.reverse.dual.DualDelta
 import scalagrad.reverse.dual.delta.Delta
+import scalagrad.showcase.deeplearning.Util.*
 
 @main def linearRegressionAutoDiff() = 
-
-    def time[R](block: => R): R = {
-        val t0 = System.nanoTime()
-        val result = block    // call-by-name
-        val t1 = System.nanoTime()
-        val ds = (t1 - t0) / 1000000
-        println("Elapsed time: " + (ds) + "s")
-        result
-    }
 
     val fishs = FishDataSet.load
 
