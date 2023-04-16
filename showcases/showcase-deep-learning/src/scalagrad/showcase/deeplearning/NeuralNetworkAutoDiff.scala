@@ -112,17 +112,17 @@ import scalagrad.showcase.deeplearning.Util.*
     
     val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10000) _
 
-    // time {
-    //     println("Forward mode")
-    //     import DeriverFractionalForward.given
-    //     val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
-    //         xs_ss.map(_.map(DualNumber(_, 0.0))), 
-    //         ys_ss.map(DualNumber(_, 0.0)
-    //     )))
-    //     val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
-    //     val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)
-    //     println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
-    // }
+    time {
+        println("Forward mode")
+        import DeriverFractionalForward.given
+        val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
+            xs_ss.map(_.map(DualNumber(_, 0.0))), 
+            ys_ss.map(DualNumber(_, 0.0)
+        )))
+        val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
+        val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)
+        println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    }
 
     time {
         println("Reverse mode")

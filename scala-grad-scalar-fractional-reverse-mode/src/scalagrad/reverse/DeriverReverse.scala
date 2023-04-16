@@ -29,7 +29,8 @@ object DeriverFractionalReverse extends DeriverFractional:
                 Eval.runDelta(1, res.deltaM)
             (x) => {
                 val delta = toDelta(x)
-                val dfs = Eval.eval(frac.one)(delta)(Map[Int, P]((keyX, frac.zero)))
+                // val dfs = Eval.eval(frac.one)(delta)(Map[Int, P]((keyX, frac.zero)))
+                val dfs = Eval.evalNonRecursive(delta, Map[Int, P]((keyX, frac.zero)))
                 dfs(keyX)
             }
 
@@ -46,7 +47,8 @@ object DeriverFractionalReverse extends DeriverFractional:
                 Eval.runDelta(2, res.deltaM)
             (x1, x2) => {
                 val delta = toDelta(x1, x2)
-                val dfs = Eval.eval(frac.one)(delta)(Map[Int, P]((keyX1, frac.zero), (keyX2, frac.zero)))
+                // val dfs = Eval.eval(frac.one)(delta)(Map[Int, P]((keyX1, frac.zero), (keyX2, frac.zero)))
+                val dfs = Eval.evalNonRecursive(delta, Map[Int, P]((keyX1, frac.zero), (keyX2, frac.zero)))
                 (dfs(keyX1), dfs(keyX2))
             }
 
@@ -62,6 +64,7 @@ object DeriverFractionalReverse extends DeriverFractional:
                     val res = f(duals)
                     Eval.runDelta(xs.size, res.deltaM)
                 val delta = toDelta(xs)
-                val dfs = Eval.eval(frac.one)(delta)(keyXs.map((_, frac.zero)).toMap)
+                // val dfs = Eval.eval(frac.one)(delta)(keyXs.map((_, frac.zero)).toMap)
+                val dfs = Eval.evalNonRecursive(delta, keyXs.map((_, frac.zero)).toMap)
                 (for (keyX <- keyXs) yield dfs(keyX)).toVector
             }
