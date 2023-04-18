@@ -91,8 +91,11 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
       name := "showcase-deep-learning",
       basicSettings,
     ).dependsOn(
+      // Fractional
       scalaGradScalarFractionalForwardMode,
       scalaGradScalarFractionalReverseMode,
+      // Spire Numeric
+      scalaGradScalarSpireForwardMode,
     )
 
 lazy val root = (project in file("."))
