@@ -1,24 +1,26 @@
-package scalagrad.fractional.auto.reverse
+package scalagrad.auto.reverse
 
 import scalagrad.api.Deriver
 import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
 
-import scalagrad.fractional.api.DeriverFractional
-import scalagrad.fractional.auto.reverse.dual.delta.{Delta, DeltaMonad}
-import scalagrad.fractional.auto.reverse.dual.DualDelta
-import scalagrad.fractional.auto.reverse.eval.Eval
-
-import scalagrad.fractional.api.DeriverFractional
+import scalagrad.auto.reverse.dual.delta.{Delta, DeltaMonad}
+import scalagrad.auto.reverse.dual.DualDelta
+import scalagrad.auto.reverse.eval.Eval
 
 trait DeriverFractionalReverse[fT2] extends Deriver[fT2]
 
-object DeriverFractionalReverse extends DeriverFractional:
 
-    type DNum[V] = DualDelta[V]
+trait DeriverReverse[fT2] extends Deriver[fT2]
 
-    given fractional[P] (using frac: Fractional[P]): DeriverFractionalReverse[DNum[P] => DNum[P]] with
+trait DeriverReversePlan[P]:
+
+    val one: P
+    val zero: P
+    val fractional: Fractional[P]
+
+    given single: DeriverReverse[DualDelta[P] => DualDelta[P]]  with
         override type dfInput = P
         override type dfOutput = P
         override def derive(f: fT): dfT = 
@@ -30,11 +32,11 @@ object DeriverFractionalReverse extends DeriverFractional:
             (x) => {
                 val delta = toDelta(x)
                 // val dfs = Eval.eval(frac.one)(delta)(Map[Int, P]((keyX, frac.zero)))
-                val dfs = Eval.evalNonRecursive(delta, Map[Int, P]((keyX, frac.zero)))
+                val dfs = Eval.evalNonRecursive(delta, Map[Int, P]((keyX, zero)))(using fractional)
                 dfs(keyX)
             }
 
-    given fractional2[P] (using frac: Fractional[P]): DeriverFractionalReverse[(DNum[P], DNum[P]) => DNum[P]] with
+    given tuple2: DeriverReverse[(DualDelta[P], DualDelta[P]) => DualDelta[P]] with
         override type dfInput = (P, P)
         override type dfOutput = (P, P)
         override def derive(f: fT): dfT = 
@@ -48,11 +50,11 @@ object DeriverFractionalReverse extends DeriverFractional:
             (x1, x2) => {
                 val delta = toDelta(x1, x2)
                 // val dfs = Eval.eval(frac.one)(delta)(Map[Int, P]((keyX1, frac.zero), (keyX2, frac.zero)))
-                val dfs = Eval.evalNonRecursive(delta, Map[Int, P]((keyX1, frac.zero), (keyX2, frac.zero)))
+                val dfs = Eval.evalNonRecursive(delta, Map[Int, P]((keyX1, zero), (keyX2, zero)))(using fractional)
                 (dfs(keyX1), dfs(keyX2))
             }
 
-    given fractionalVector[P] (using frac: Fractional[P]): DeriverFractionalReverse[Vector[DNum[P]] => DNum[P]] with
+    given vector: DeriverReverse[Vector[DualDelta[P]] => DualDelta[P]] with
         override type dfInput = Vector[P]
         override type dfOutput = Vector[P]
         override def derive(f: fT): dfT = 
@@ -65,6 +67,16 @@ object DeriverFractionalReverse extends DeriverFractional:
                     Eval.runDelta(xs.size, res.deltaM)
                 val delta = toDelta(xs)
                 // val dfs = Eval.eval(frac.one)(delta)(keyXs.map((_, frac.zero)).toMap)
-                val dfs = Eval.evalNonRecursive(delta, keyXs.map((_, frac.zero)).toMap)
+                val dfs = Eval.evalNonRecursive(delta, keyXs.map((_, zero)).toMap)(using fractional)
                 (for (keyX <- keyXs) yield dfs(keyX)).toVector
             }
+
+object DeriverReversePlan:
+
+    object DeriverReversePlanDouble extends DeriverReversePlan[Double] {
+        val fractional: Fractional[Double] = summon[Fractional[Double]]
+        val one = 1.0
+        val zero = 0.0
+    }
+
+    export DeriverReversePlanDouble.given

@@ -12,15 +12,16 @@ import org.scalacheck.Prop.forAllNoShrink
 import scala.math.Fractional
 import scalagrad.api.Deriver
 import scalagrad.api.ScalaGrad
-import scalagrad.fractional.api.test.DeriveFractionalDoubleDoubleTests
-import scalagrad.fractional.auto.reverse.dual.DualDelta
-import scalagrad.fractional.auto.reverse.DeriverFractionalReverse
+import scalagrad.deriver.test.DoubleDoubleBasicTests
+import scalagrad.auto.reverse.dual.DualDelta
+import scalagrad.auto.reverse.DeriverReversePlan.DeriverReversePlanDouble
+import scalagrad.fractional.auto.reverse.dual.DualDeltaIsFractional.given
 
-class DeriverReverseFractionalDoubleDoubleTests extends DeriveFractionalDoubleDoubleTests("reverse-mode") {
+class DeriverReverseFractionalDoubleDoubleTests extends DoubleDoubleBasicTests("reverse-mode") {
 
-  override type DNum[P] = DualDelta[P]
+  override type T = DualDelta[Double]
   override val fractionalDNum: Fractional[DualDelta[Double]] = summon[Fractional[DualDelta[Double]]]
-  override val deriver: DoubleDoubleDeriver = DeriverFractionalReverse.fractional2[Double]
+  override val deriver: DoubleDoubleDeriver = DeriverReversePlanDouble.tuple2
 
 }
 

@@ -1,4 +1,4 @@
-package scalagrad.fractional.api.test
+package scalagrad.deriver.test
 
 import collection.mutable.Stack
 import org.scalatest.*
@@ -13,14 +13,14 @@ import org.scalacheck.Prop.forAllNoShrink
 import scalagrad.api.Deriver
 import scalagrad.api.ScalaGrad
 
-import scalagrad.fractional.numerical.DeriverNumerical.*
 import scalagrad.test.util.TestUtil.{reasonableDoubleGenerator, isReasonableDouble}
+import scalagrad.fractional.numerical.DeriverNumerical.approx2
 
-abstract class DeriveFractionalDoubleDoubleTests(val name: String) extends AnyWordSpec with should.Matchers:
+abstract class DoubleDoubleBasicTests(val name: String) extends AnyWordSpec with should.Matchers:
 
-  type DNum[P]
-  given fractionalDNum: Fractional[DNum[Double]]
-  type DoubleDoubleDeriver = Deriver[(DNum[Double], DNum[Double]) => DNum[Double]] {
+  type T
+  given fractionalDNum: Fractional[T]
+  type DoubleDoubleDeriver = Deriver[(T, T) => T] {
     type dfInput = (Double, Double)
     type dfOutput = (Double, Double)
   }
@@ -30,7 +30,7 @@ abstract class DeriveFractionalDoubleDoubleTests(val name: String) extends AnyWo
     val tolerance = 1e-2
     forAll(reasonableDoubleGenerator, reasonableDoubleGenerator) { (x1: Double, x2: Double) =>
       whenever(isReasonableDouble(x1) && isReasonableDouble(x2)) {
-        val df = ScalaGrad.derive(f[DNum[Double]])(using deriver)
+        val df = ScalaGrad.derive(f[T])(using deriver)
         val (dx1, dx2) = df(x1, x2)
         val (approxDx1, approxDx2) = ScalaGrad.derive(f[Double])(using approx2(1e-6))(x1, x2)
         dx1 should be(approxDx1 +- tolerance)

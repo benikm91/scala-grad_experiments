@@ -18,6 +18,7 @@ lazy val basicSettings = Seq(
     Test / scalaSource := baseDirectory.value / "test",
 )
 
+// Provides basic API
 lazy val scalaGradApi = (project in file("./scala-grad-api"))
   .settings(
     name := "scala-grad-api",
@@ -25,6 +26,7 @@ lazy val scalaGradApi = (project in file("./scala-grad-api"))
     scalaTestSettings,
   )
   
+// Implements API with Numerical Differentitation
 lazy val scalaGradNumericalDifferentiation = (project in file("./scala-grad-numerical-differentiation"))
   .settings(
     name := "scala-grad-numerical-differentiation",
@@ -35,57 +37,62 @@ lazy val scalaGradNumericalDifferentiation = (project in file("./scala-grad-nume
     scalaGradApi % "test->test",
   )
 
-lazy val scalaGradScalarFractionalApi = (project in file("./scala-grad-scalar-fractional-api"))
+// Implements API with forward-mode of Automatic Differentitation
+lazy val scalaGradAutoForwardMode = (project in file("./scala-grad-auto-forward-mode"))
   .settings(
-    name := "scala-grad-scalar-fractional-api",
+    name := "scala-grad-auto-forward-mode",
     basicSettings,
     scalaTestSettings,
   ).dependsOn(
     scalaGradApi,
     scalaGradApi % "test->test",
-    scalaGradNumericalDifferentiation % "test->compile",
   )
 
+// Implements API with reverse-mode of Automatic Differentitation
+lazy val scalaGradAutoReverseMode = (project in file("./scala-grad-auto-reverse-mode"))
+  .settings(
+    name := "scala-grad-auto-reverse-mode",
+    basicSettings,
+    scalaTestSettings,
+  ).dependsOn(
+    scalaGradApi,
+    scalaGradApi % "test->test",
+  )
+
+// Extends forward-mode to work with scala.math.fractional
 lazy val scalaGradScalarFractionalForwardMode = (project in file("./scala-grad-scalar-fractional-forward-mode"))
   .settings(
     name := "scala-grad-scalar-fractional-forward-mode",
     basicSettings,
   ).dependsOn(
-    scalaGradScalarFractionalApi,
-    scalaGradScalarFractionalApi % "test->test",
+    scalaGradAutoForwardMode,
+    scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
+// Extends reverse-mode to work with scala.math.fractional
 lazy val scalaGradScalarFractionalReverseMode = (project in file("./scala-grad-scalar-fractional-reverse-mode"))
   .settings(
     name := "scala-grad-scalar-fractional-reverse-mode",
     basicSettings,
     scalaTestSettings,
   ).dependsOn(
-    scalaGradScalarFractionalApi % "compile->compile;test->test"
+    scalaGradAutoReverseMode,
+    scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
 
-lazy val scalaGradScalarSpireApi = (project in file("./scala-grad-scalar-spire-api"))
-  .settings(
-    name := "scala-grad-scalar-spire-api",
-    basicSettings,
-    spireDependency,
-    scalaTestSettings,
-  ).dependsOn(
-    scalaGradApi,
-    scalaGradApi % "test->test",
-    scalaGradNumericalDifferentiation % "test->compile",
-  )
-  
+// Extends forward-mode to work with spire.math.numeric
 lazy val scalaGradScalarSpireForwardMode = (project in file("./scala-grad-scalar-spire-forward-mode"))
   .settings(
     name := "scala-grad-scalar-spire-forward-mode",
     basicSettings,
     scalaTestSettings,
+    spireDependency,
   ).dependsOn(
-    scalaGradScalarSpireApi,
-    scalaGradScalarSpireApi % "test->test",
+    scalaGradAutoForwardMode,
+    scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
+// Show library usage
 lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-learning"))
   .settings(
       name := "showcase-deep-learning",
@@ -104,12 +111,12 @@ lazy val root = (project in file("."))
   )
   .dependsOn(
     scalaGradApi,
+    // Forward
+    scalaGradAutoForwardMode,
     // Fractional
-    scalaGradScalarFractionalApi,
     scalaGradScalarFractionalForwardMode,
     scalaGradScalarFractionalReverseMode,
     // Spire Numeric
-    scalaGradScalarSpireApi,
     scalaGradScalarSpireForwardMode,
     // Showcases
     showcaseDeepLearning,

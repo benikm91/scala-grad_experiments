@@ -1,4 +1,4 @@
-package scalagrad.fractional.auto.reverse.dual.delta
+package scalagrad.auto.reverse.dual.delta
 
 enum Delta[+P] {
   opaque type DeltaId = Int

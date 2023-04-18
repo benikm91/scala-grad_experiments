@@ -1,14 +1,9 @@
 package scalagrad.fractional.auto.reverse.dual
 
-import scalagrad.fractional.auto.reverse.dual.delta.{DeltaMonad, Delta, DeltaId, DeltaState}
+import scalagrad.auto.reverse.dual.delta.{DeltaMonad, Delta, DeltaId, DeltaState}
+import scalagrad.auto.reverse.dual.DualDelta
 
-
-case class DualDelta[P](value: P, deltaM: DeltaMonad[P, Delta[P]]):
-  inline def v: P = value
-
-object DualDelta:
-
-  def ZeroM[P] = DeltaMonad[P, Delta[P]](state => (state, Delta.Zero))
+object DualDeltaIsFractional:
 
   def deltaLet[P](delta: Delta[P]): DeltaMonad[P, DeltaId] = DeltaMonad[P, DeltaId](next => 
     next._3.get(delta) match
@@ -68,7 +63,7 @@ object DualDelta:
 
     override def div(x: DualDelta[P], y: DualDelta[P]): DualDelta[P] = x / y
 
-    override def fromInt(x: Int): DualDelta[P] = DualDelta[P](f.fromInt(x), ZeroM[P])
+    override def fromInt(x: Int): DualDelta[P] = DualDelta[P](f.fromInt(x), DualDelta.ZeroM[P])
 
     override def compare(x: DualDelta[P], y: DualDelta[P]): Int = f.compare(x.v, y.v)
 

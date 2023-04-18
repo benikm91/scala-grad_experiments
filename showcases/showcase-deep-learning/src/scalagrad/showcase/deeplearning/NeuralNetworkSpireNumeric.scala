@@ -2,8 +2,9 @@ package scalagrad.showcase.deeplearning
 
 import scala.io.Source
 import scalagrad.api.ScalaGrad
-import scalagrad.spire.auto.forward.DeriverSpireNumericForward
-import scalagrad.spire.auto.forward.dual.DualNumber
+import scalagrad.auto.forward.DeriverForwardPlan.given
+import scalagrad.auto.forward.dual.DualNumber
+import scalagrad.spire.auto.forward.dual.DualNumberIsNumeric.given
 import scalagrad.showcase.deeplearning.Util.*
 
 import spire.math.Numeric
@@ -113,7 +114,6 @@ import spire.compat.numeric
 
     time {
         println("Forward mode")
-        import DeriverSpireNumericForward.given
         val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
             xs_ss.map(_.map(summon[Numeric[DualNumber[Double]]].fromDouble(_))), 
             ys_ss.map(summon[Numeric[DualNumber[Double]]].fromDouble(_))

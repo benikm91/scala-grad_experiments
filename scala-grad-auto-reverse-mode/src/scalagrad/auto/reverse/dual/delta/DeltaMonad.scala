@@ -1,6 +1,6 @@
-package scalagrad.fractional.auto.reverse.dual.delta
+package scalagrad.auto.reverse.dual.delta
 
-import scalagrad.fractional.auto.reverse.dual.delta.Delta
+import scalagrad.auto.reverse.dual.delta.Delta
 // Must be like: type M a = DeltaState → (a, DeltaState)
 /** DeltaMonad is a simple State Monad */
 case class DeltaMonad[P, A](private val next: DeltaState[P] => (DeltaState[P], A)):

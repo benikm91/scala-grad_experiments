@@ -1,12 +1,9 @@
 package scalagrad.fractional.auto.forward.dual
 
 import scala.math.Fractional
+import scalagrad.auto.forward.dual.DualNumber
 
-case class DualNumber[T](value: T, derivative: T):
-  inline def v: T = value
-  inline def dv: T = derivative
-
-object DualNumber:
+object DualNumberIsFractional:
 
   given [T](using f: Fractional[T]): Fractional[DualNumber[T]] with
 

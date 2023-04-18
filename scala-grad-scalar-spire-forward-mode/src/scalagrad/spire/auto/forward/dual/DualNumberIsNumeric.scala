@@ -1,5 +1,7 @@
 package scalagrad.spire.auto.forward.dual
 
+import scalagrad.auto.forward.dual.DualNumber
+
 import spire.math.Numeric
 import algebra.ring.MultiplicativeGroup
 import algebra.ring.AdditiveCommutativeMonoid
@@ -24,11 +26,7 @@ import algebra.ring.Signed.Negative
 import algebra.ring.AdditiveGroup
 import spire.algebra.Trig
 
-case class DualNumber[T](value: T, derivative: T):
-    inline def v: T = value
-    inline def dv: T = derivative
-
-object DualNumber:
+object DualNumberIsNumeric:
 
     def chain[T: MultiplicativeMonoid](f: T => T, df: T => T)(dn: DualNumber[T]) = 
         DualNumber(f(dn.v), df(dn.v) * dn.dv)
