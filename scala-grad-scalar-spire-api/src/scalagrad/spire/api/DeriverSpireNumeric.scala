@@ -3,10 +3,9 @@ package scalagrad.spire.api
 import scalagrad.api.Deriver
 import scala.reflect.ClassTag
 
-import spire.math._
-import spire.algebra.Trig
+import spire.math.Numeric
 
-trait Num[A] extends Numeric[A] with Trig[A]
+import spire.algebra.Field
 
 trait DeriverSpireNumeric:
 

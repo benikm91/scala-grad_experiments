@@ -9,28 +9,29 @@ import scalagrad.spire.auto.forward.dual.DualNumber
 import spire.math.Numeric
 
 import scalagrad.spire.api.DeriverSpireNumeric
+
 trait DeriverSpireNumericForward[fT2] extends Deriver[fT2]
 
 object DeriverSpireNumericForward extends DeriverSpireNumeric:
 
     type DNum[V] = DualNumber[V]
 
-    given spireNumeric[P] (using frac: Numeric[P]): DeriverSpireNumericForward[DNum[P] => DNum[P]] with
+    given spireNumeric[P] (using num: Numeric[P]): DeriverSpireNumericForward[DNum[P] => DNum[P]] with
         override type dfInput = P
         override type dfOutput = P
         override def derive(f: fT): dfT = 
-            x => f(DualNumber[P](x, frac.one)).dv
+            x => f(DualNumber[P](x, num.one)).dv
 
-    given spireNumeric2[P] (using frac: Numeric[P]): DeriverSpireNumericForward[(DNum[P], DNum[P]) => DNum[P]] with
+    given spireNumeric2[P] (using num: Numeric[P]): DeriverSpireNumericForward[(DNum[P], DNum[P]) => DNum[P]] with
         override type dfInput = (P, P)
         override type dfOutput = (P, P)
         override def derive(f: fT): dfT = 
             (x1, x2) => (
-                f(DualNumber[P](x1, frac.one), DualNumber[P](x2, frac.zero)).dv,
-                f(DualNumber[P](x1, frac.zero), DualNumber[P](x2, frac.one)).dv
+                f(DualNumber[P](x1, num.one), DualNumber[P](x2, num.zero)).dv,
+                f(DualNumber[P](x1, num.zero), DualNumber[P](x2, num.one)).dv
             )
 
-    given spireNumericVector[P] (using frac: Numeric[P]): DeriverSpireNumericForward[Vector[DNum[P]] => DNum[P]] with
+    given spireNumericVector[P] (using num: Numeric[P]): DeriverSpireNumericForward[Vector[DNum[P]] => DNum[P]] with
         override type dfInput = Vector[P]
         override type dfOutput = Vector[P]
         override def derive(f: fT): dfT = 
@@ -39,7 +40,7 @@ object DeriverSpireNumericForward extends DeriverSpireNumeric:
                     for (i <- xs.indices) yield f((
                         for {
                             (x, j) <- xs.zipWithIndex
-                            dxi = if i == j then frac.one else frac.zero
+                            dxi = if i == j then num.one else num.zero
                         } yield DualNumber[P](x, dxi)
                     )).dv
                 ).toVector

@@ -10,7 +10,7 @@ import spire.math.Numeric
 import spire.implicits.*
 import spire.compat.numeric
 
-@main def neuralNetworkSpire() = 
+@main def neuralNetworkSpireNumeric() = 
     
     val nHiddenUnits = 5
 
@@ -24,13 +24,11 @@ import spire.compat.numeric
     val (xs_ss, _, _) = StandardScaler.scaleMatrix(xs)
     val (ys_ss, ys_mean, ys_std) = StandardScaler.scaleColumn(ys)
 
-    def linearModel[T](x: Vector[T], w0: T, ws: Vector[T])(using f: Numeric[T]): T =
-        import f.* 
+    def linearModel[T: Numeric](x: Vector[T], w0: T, ws: Vector[T]): T =
         w0 + x.zip(ws).map(_ * _).sum
 
-    def relu[T](x: T)(using f: Numeric[T]): T =
-        import f.* 
-        if f.toDouble(x) < 0 then f.zero else x
+    def relu[T](x: T)(using num: Numeric[T]): T =
+        if x < 0 then num.zero else x
 
     def neuralNetwork[T: Numeric](
         x: Vector[T], 
@@ -61,11 +59,10 @@ import spire.compat.numeric
         checkConsistency(firstW0, firstWs, lastW0, lastWs)
         firstW0 ++ firstWs.flatten ++ Vector(lastW0) ++ lastWs
 
-    def loss[T](ys: Vector[T], ysHat: Vector[T])(using f: Numeric[T]): T = 
-        import f.*
+    def loss[T: Numeric](ys: Vector[T], ysHat: Vector[T]): T = 
         ys.zip(ysHat).map { case (y, yHat) => 
             (y - yHat) * (y - yHat)
-        }.sum / fromInt(ys.size * 2)
+        }.sum / (ys.size * 2)
 
     def lossF[T: Numeric](xs: Vector[Vector[T]], ys: Vector[T])(
         ws: Vector[T]
