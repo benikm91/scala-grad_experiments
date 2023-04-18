@@ -101,7 +101,8 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
 lazy val root = (project in file("."))
   .settings(
     name := "scala-grad",
-  ).aggregate(
+  )
+  .dependsOn(
     scalaGradApi,
     // Fractional
     scalaGradScalarFractionalApi,
@@ -113,3 +114,4 @@ lazy val root = (project in file("."))
     // Showcases
     showcaseDeepLearning,
   )
+  .enablePlugins(MdocPlugin)
