@@ -14,6 +14,7 @@ import scalagrad.spire.auto.dual.DualIsNumeric.given
 
 import scalagrad.spire.auto.dual.DualIsNumeric
 
+import scalagrad.auto.forward.DeriverForwardPlan
 object Main {
     def main(args: Array[String]): Unit = {
 

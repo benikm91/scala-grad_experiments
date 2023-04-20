@@ -5,6 +5,7 @@ import scalagrad.api.Deriver
 import scalagrad.fractional.auto.dual.DualIsFractional
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 
+import scalagrad.auto.forward.DeriverForwardPlan
 object Main {
 
     def main(args: Array[String]): Unit = {

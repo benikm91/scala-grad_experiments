@@ -20,6 +20,7 @@ import spire.math.Numeric
 import spire.implicits.*
 import scalagrad.auto.forward.DeriverForwardPlan.DeriverForwardPlanDouble
 
+import scalagrad.auto.forward.DeriverForwardPlan
 class DeriverForwardSpireNumericDoubleTests extends DeriveSpireNumericDoubleTests("forward-mode") {
 
   override type DNum[P] = DualNumber[P]

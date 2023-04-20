@@ -16,7 +16,7 @@ def f[T: Numeric](x: T): T =
 // import ScalaGrad.default.given  // default exports best default implementations
 // val df = derive[Double](f)  // goal
 
-// curernt API
+// current API
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.auto.forward.dual.DualNumber.given
 import scalagrad.auto.forward.DeriverForwardPlan.given

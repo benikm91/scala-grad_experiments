@@ -8,6 +8,9 @@ import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.showcase.deeplearning.Util.*
 
 import scalagrad.fractional.auto.dual.DualIsFractional
+
+import scalagrad.auto.forward.DeriverForwardPlan
+
 @main def neuralNetworkFractional() = 
 
     val nHiddenUnits = 5

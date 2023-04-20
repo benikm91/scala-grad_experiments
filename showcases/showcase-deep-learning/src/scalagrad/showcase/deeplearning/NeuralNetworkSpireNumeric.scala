@@ -12,6 +12,7 @@ import spire.math.Numeric
 import spire.implicits.*
 import spire.compat.numeric
 
+import scalagrad.auto.forward.DeriverForwardPlan
 @main def neuralNetworkSpireNumeric() = 
     
     val nHiddenUnits = 5
