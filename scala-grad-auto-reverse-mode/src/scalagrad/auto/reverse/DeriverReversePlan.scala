@@ -9,12 +9,14 @@ import scalagrad.auto.reverse.dual.delta.{Delta, DeltaMonad}
 import scalagrad.auto.reverse.dual.DualDelta
 import scalagrad.auto.reverse.eval.Eval
 
+import scala.math.Fractional.Implicits.given
+
 trait DeriverFractionalReverse[fT2] extends Deriver[fT2]
 
 
 trait DeriverReverse[fT2] extends Deriver[fT2]
 
-trait DeriverReversePlan[P]:
+trait DeriverReversePlan[P: Fractional]:
 
     val one: P
     val zero: P

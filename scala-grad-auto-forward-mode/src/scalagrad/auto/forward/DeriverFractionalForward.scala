@@ -9,7 +9,7 @@ import scalagrad.auto.forward.dual.DualNumber
 
 trait DeriverForward[fT2] extends Deriver[fT2]
 
-trait DeriverForwardPlan[P]:
+trait DeriverForwardPlan[P: Fractional]:
 
     val one: P
     val zero: P

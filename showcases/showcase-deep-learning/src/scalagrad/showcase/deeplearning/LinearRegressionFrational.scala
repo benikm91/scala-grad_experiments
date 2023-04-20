@@ -2,16 +2,12 @@ package scalagrad.showcase.deeplearning
 
 import scalagrad.api.ScalaGrad
 
-import scalagrad.auto.forward.dual.DualNumber
-import scalagrad.auto.forward.DeriverForwardPlan.given
-import scalagrad.fractional.auto.forward.dual.DualNumberIsFractional.given
+import scalagrad.fractional.auto.dual.DualIsFractional.given
 
-import scalagrad.auto.reverse.DeriverReversePlan.given
-import scalagrad.auto.reverse.dual.DualDelta
-import scalagrad.fractional.auto.reverse.dual.DualDeltaIsFractional.given
 
 import scalagrad.showcase.deeplearning.Util.*
 
+import scalagrad.fractional.auto.dual.DualIsFractional
 @main def linearRegressionAutoDiff() = 
 
     val fishs = FishDataSet.load
@@ -64,6 +60,10 @@ import scalagrad.showcase.deeplearning.Util.*
     println(f"${Math.sqrt(loss(ys, initYsHat))}g  -- RMSE with initial weights")
     val gradientDescent = gradientDescentF(initW0, initWs, 0.01, 1000)
     time {
+        import scalagrad.auto.forward.dual.DualNumber
+        import scalagrad.auto.forward.dual.DualNumber.given
+        import scalagrad.auto.forward.DeriverForwardPlan.given
+
         println("Forward mode")
         val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
             xs_ss.map(_.map(DualNumber(_, 0.0))), 
@@ -74,6 +74,10 @@ import scalagrad.showcase.deeplearning.Util.*
         println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
     }
     time {
+        import scalagrad.auto.reverse.dual.DualDelta
+        import scalagrad.auto.reverse.dual.DualDelta.given
+        import scalagrad.auto.reverse.DeriverReversePlan.given
+
         println("Reverse mode")
         val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
             xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 

@@ -3,16 +3,11 @@ package scalagrad.showcase.deeplearning
 import scala.io.Source
 import scalagrad.api.ScalaGrad
 
-import scalagrad.auto.forward.dual.DualNumber
-import scalagrad.auto.forward.DeriverForwardPlan.given
-import scalagrad.fractional.auto.forward.dual.DualNumberIsFractional.given
-
-import scalagrad.auto.reverse.DeriverReversePlan.given
-import scalagrad.auto.reverse.dual.DualDelta
-import scalagrad.fractional.auto.reverse.dual.DualDeltaIsFractional.given
+import scalagrad.fractional.auto.dual.DualIsFractional.given
 
 import scalagrad.showcase.deeplearning.Util.*
 
+import scalagrad.fractional.auto.dual.DualIsFractional
 @main def neuralNetworkFractional() = 
 
     val nHiddenUnits = 5
@@ -118,6 +113,10 @@ import scalagrad.showcase.deeplearning.Util.*
     val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10000) _
 
     time {
+        import scalagrad.auto.forward.dual.DualNumber
+        import scalagrad.auto.forward.dual.DualNumber.given
+        import scalagrad.auto.forward.DeriverForwardPlan.given
+
         println("Forward mode")
         val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
             xs_ss.map(_.map(DualNumber(_, 0.0))), 
@@ -129,6 +128,10 @@ import scalagrad.showcase.deeplearning.Util.*
     }
 
     time {
+        import scalagrad.auto.reverse.dual.DualDelta
+        import scalagrad.auto.reverse.dual.DualDelta.given
+        import scalagrad.auto.reverse.DeriverReversePlan.given
+
         println("Reverse mode")
         val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
             xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 

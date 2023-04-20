@@ -2,9 +2,10 @@ package scalagrad.showcase.deeplearning
 
 import scala.io.Source
 import scalagrad.api.ScalaGrad
-import scalagrad.auto.forward.DeriverForwardPlan.given
-import scalagrad.auto.forward.dual.DualNumber
-import scalagrad.spire.auto.forward.dual.DualNumberIsNumeric.given
+
+import scalagrad.spire.auto.dual.DualIsNumeric
+import scalagrad.spire.auto.dual.DualIsNumeric.given
+
 import scalagrad.showcase.deeplearning.Util.*
 
 import spire.math.Numeric
@@ -113,11 +114,30 @@ import spire.compat.numeric
     val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10000) _
 
     time {
+        import scalagrad.auto.forward.dual.DualNumber
+        import scalagrad.auto.forward.dual.DualNumber.given
+        import scalagrad.auto.forward.DeriverForwardPlan.given
+
         println("Forward mode")
         val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
             xs_ss.map(_.map(summon[Numeric[DualNumber[Double]]].fromDouble(_))), 
             ys_ss.map(summon[Numeric[DualNumber[Double]]].fromDouble(_))
         ))
+        val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
+        val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)
+        println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    }
+
+    time {
+        import scalagrad.auto.reverse.dual.DualDelta
+        import scalagrad.auto.reverse.dual.DualDelta.given
+        import scalagrad.auto.reverse.DeriverReversePlan.given
+
+        println("Reverse mode")
+        val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
+            xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 
+            ys_ss.map(DualDelta(_, DualDelta.ZeroM[Double])
+        )))
         val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
         val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)
         println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")

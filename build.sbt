@@ -60,35 +60,26 @@ lazy val scalaGradAutoReverseMode = (project in file("./scala-grad-auto-reverse-
   )
 
 // Extends forward-mode to work with scala.math.fractional
-lazy val scalaGradScalarFractionalForwardMode = (project in file("./scala-grad-scalar-fractional-forward-mode"))
+lazy val scalaGradAutoFractional = (project in file("./scala-grad-auto-fractional"))
   .settings(
-    name := "scala-grad-scalar-fractional-forward-mode",
+    name := "scala-grad-auto-fractional",
     basicSettings,
   ).dependsOn(
     scalaGradAutoForwardMode,
-    scalaGradNumericalDifferentiation % "test->compile;test->test",
-  )
-  
-// Extends reverse-mode to work with scala.math.fractional
-lazy val scalaGradScalarFractionalReverseMode = (project in file("./scala-grad-scalar-fractional-reverse-mode"))
-  .settings(
-    name := "scala-grad-scalar-fractional-reverse-mode",
-    basicSettings,
-    scalaTestSettings,
-  ).dependsOn(
     scalaGradAutoReverseMode,
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
-
+  
 // Extends forward-mode to work with spire.math.numeric
-lazy val scalaGradScalarSpireForwardMode = (project in file("./scala-grad-scalar-spire-forward-mode"))
+lazy val scalaGradAutoSpire = (project in file("./scala-grad-auto-spire"))
   .settings(
-    name := "scala-grad-scalar-spire-forward-mode",
+    name := "scala-grad-auto-spire",
     basicSettings,
     scalaTestSettings,
     spireDependency,
   ).dependsOn(
     scalaGradAutoForwardMode,
+    scalaGradAutoReverseMode,
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
@@ -98,26 +89,23 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
       name := "showcase-deep-learning",
       basicSettings,
     ).dependsOn(
-      // Fractional
-      scalaGradScalarFractionalForwardMode,
-      scalaGradScalarFractionalReverseMode,
-      // Spire Numeric
-      scalaGradScalarSpireForwardMode,
+      scalaGradAutoFractional,
+      scalaGradAutoSpire,
     )
 
 lazy val root = (project in file("."))
   .settings(
     name := "scala-grad",
   )
-  .dependsOn(
+  .aggregate(
+    // API
     scalaGradApi,
-    // Forward
+    // Modes
     scalaGradAutoForwardMode,
-    // Fractional
-    scalaGradScalarFractionalForwardMode,
-    scalaGradScalarFractionalReverseMode,
-    // Spire Numeric
-    scalaGradScalarSpireForwardMode,
+    scalaGradAutoReverseMode,
+    // Implementations
+    scalaGradAutoFractional,
+    scalaGradAutoSpire,
     // Showcases
     showcaseDeepLearning,
   )
