@@ -6,6 +6,9 @@ import scalagrad.auto.forward.DeriverForwardPlan.DeriverForwardPlanDouble
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 
 import scalagrad.fractional.auto.dual.DualIsFractional
+
+import scalagrad.auto.forward.DeriverForwardPlan
+
 class DeriverForwardFractionalDoubleDoubleTests extends DoubleDoubleBasicTests("forward-mode") {
 
   override type T = DualNumber[Double]

@@ -8,6 +8,10 @@ import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.showcase.deeplearning.Util.*
 
 import scalagrad.fractional.auto.dual.DualIsFractional
+
+import scalagrad.auto.forward.DeriverForwardPlan
+
+
 @main def linearRegressionAutoDiff() = 
 
     val fishs = FishDataSet.load
@@ -40,12 +44,6 @@ import scalagrad.fractional.auto.dual.DualIsFractional
         val w0 = w0Andws.head
         val ws = w0Andws.tail
         loss(ys, xs.map(predict(_, w0, ws)))
-
-    // import DeriverFractionalForward.given
-    // val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
-    //    xs_ss.map(_.map(DualNumber(_, 0.0))), 
-    //    ys_ss.map(DualNumber(_, 0.0)
-    // )))
 
     def gradientDescentF(w0: Double, ws: Vector[Double], alpha: Double, n: Int)(dLoss: Vector[Double] => Vector[Double]): (Double, Vector[Double]) =
         if n == 0 then (w0, ws)

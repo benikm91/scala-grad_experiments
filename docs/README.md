@@ -2,6 +2,8 @@
 
 ## QuickStart
 
+### Minimal Example
+
 ```scala mdoc
 import scalagrad.api.ScalaGrad.derive
 import spire.math.Numeric
@@ -15,10 +17,16 @@ def f[T: Numeric](x: T): T =
 // val df = derive[Double](f)  // goal
 
 // curernt API
-import scalagrad.spire.auto.forward.dual.DualNumber
-import scalagrad.spire.auto.forward.DeriverSpireNumericForward.given
+import scalagrad.auto.forward.dual.DualNumber
+import scalagrad.auto.forward.dual.DualNumber.given
+import scalagrad.auto.forward.DeriverForwardPlan.given
+
 val df = derive(f[DualNumber[Double]])  // currently
 
 val x = 5
 assert(df(x) == 2 * x)
 ```
+
+### Specific Mode
+
+TODO
