@@ -25,4 +25,3 @@ class DeriverReverseFractionalDoubleDoubleTests extends DoubleDoubleBasicTests("
   override val deriver: DoubleDoubleDeriver = DeriverReversePlanDouble.tuple2
 
 }
-
