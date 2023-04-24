@@ -68,12 +68,13 @@ import scalagrad.auto.forward.DeriverForwardPlan
     val initYsHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, initW0, initWs)), ys_mean, ys_std)
     println(f"${Math.sqrt(loss(ys, initYsHat))}g  -- RMSE with initial weights")
     val newtonMethod = newtonMethodF(initW0, initWs)
+    
     time {
         import scalagrad.auto.forward.dual.DualNumber
         import scalagrad.auto.forward.dual.DualNumber.given
         import scalagrad.auto.forward.DeriverForwardPlan.given
 
-        println("Forward mode")
+        println("Forward-Forward mode")
         val dLoss = ScalaGrad.derive(lossF[DualNumber[Double]](
             xs_ss.map(_.map(DualNumber(_, 0.0))), 
             ys_ss.map(DualNumber(_, 0.0)
@@ -82,6 +83,47 @@ import scalagrad.auto.forward.DeriverForwardPlan
             xs_ss.map(_.map(x => DualNumber(DualNumber(x, 0.0), DualNumber(0.0, 0.0)))), 
             ys_ss.map(x => DualNumber(DualNumber(x, 0.0), DualNumber(0.0, 0.0)))
         )))
+        val (w0, ws) = newtonMethod(dLoss, d2Loss)
+        val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)
+        println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    }
+
+    time {
+        import scalagrad.auto.reverse.dual.DualDelta
+        import scalagrad.auto.reverse.dual.DualDelta.given
+        import scalagrad.auto.reverse.DeriverReversePlan.given
+
+        println("Reverse-Reverse mode")
+        val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
+            xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 
+            ys_ss.map(DualDelta(_, DualDelta.ZeroM[Double])
+        )))
+        val d2Loss = ScalaGrad.derive(ScalaGrad.derive(lossF[DualDelta[DualDelta[Double]]](
+            xs_ss.map(_.map(x => DualDelta(DualDelta(x, DualDelta.ZeroM[Double]), DualDelta.ZeroM[DualDelta[Double]]))), 
+            ys_ss.map(x => DualDelta(DualDelta(x, DualDelta.ZeroM[Double]), DualDelta.ZeroM[DualDelta[Double]])
+        ))))
+        val (w0, ws) = newtonMethod(dLoss, d2Loss)
+        val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)
+        println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
+    }
+
+    time {
+        import scalagrad.auto.forward.dual.DualNumber
+        import scalagrad.auto.forward.dual.DualNumber.given
+        import scalagrad.auto.reverse.dual.DualDelta
+        import scalagrad.auto.reverse.dual.DualDelta.given
+        import scalagrad.auto.reverse.DeriverReversePlan.given
+        import scalagrad.auto.forward.DeriverForwardPlan.given
+
+        println("Reverse-Forward mode")
+        val dLoss = ScalaGrad.derive(lossF[DualDelta[Double]](
+            xs_ss.map(_.map(DualDelta(_, DualDelta.ZeroM[Double]))), 
+            ys_ss.map(DualDelta(_, DualDelta.ZeroM[Double])
+        )))
+        val d2Loss = ScalaGrad.derive(ScalaGrad.derive(lossF[DualDelta[DualNumber[Double]]](
+            xs_ss.map(_.map(x => DualDelta(DualNumber(x, 0.0), DualDelta.ZeroM[DualNumber[Double]]))), 
+            ys_ss.map(x => DualDelta(DualNumber(x, 0.0), DualDelta.ZeroM[DualNumber[Double]])
+        ))))
         val (w0, ws) = newtonMethod(dLoss, d2Loss)
         val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)
         println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
