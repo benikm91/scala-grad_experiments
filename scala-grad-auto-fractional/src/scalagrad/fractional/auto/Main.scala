@@ -75,14 +75,8 @@ object Main {
         def f1[T](x: T)(using f: Fractional[T]): T = 
             import f._
             x * x
-
-        def doDeriveForward[P: Fractional](f: [T] => T => Fractional[T] ?=> T): P => P = 
-            ScalaGrad.derive(f[DualNumber[P]])
         
-        def deriveTwice[P: Fractional](f: [T] => T => Fractional[T] ?=> T) =
-            ScalaGrad.derive(ScalaGrad.derive(f1[DualNumber[DualDelta[P]]]))
-
-        val ddf = deriveTwice[Double]([T] => (x: T) => (f: Fractional[T]) ?=> f1(x))
+        val ddf = ScalaGrad.derive(ScalaGrad.derive(f1[DualNumber[DualDelta[Double]]]))
         println(ddf(5.0))
 
     def reverseMode(): Unit = {

@@ -30,3 +30,16 @@ assert(df(x) == 2 * x)
 ### Specific Mode
 
 TODO
+
+### Higher Order
+
+```scala mdoc
+// current API
+
+def f1[T](x: T)(using f: Fractional[T]): T = 
+    import f._
+    x * x
+
+val ddf = ScalaGrad.derive(ScalaGrad.derive(f1[DualNumber[DualDelta[Double]]]))
+println(ddf(5.0))
+```
