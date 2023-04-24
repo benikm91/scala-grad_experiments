@@ -14,7 +14,8 @@ import scalagrad.api.Deriver
 import scalagrad.api.ScalaGrad
 import scalagrad.deriver.test.DoubleDoubleBasicTests
 import scalagrad.auto.reverse.dual.DualDelta
-import scalagrad.auto.reverse.DeriverReversePlan.DeriverReversePlanDouble
+import scalagrad.auto.reverse.DeriverReversePlan
+import scalagrad.auto.reverse.DeriverReversePlan.given
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 
 import scalagrad.fractional.auto.dual.DualIsFractional
@@ -22,6 +23,6 @@ class DeriverReverseFractionalDoubleDoubleTests extends DoubleDoubleBasicTests("
 
   override type T = DualDelta[Double]
   override val fractionalDNum: Fractional[DualDelta[Double]] = summon[Fractional[DualDelta[Double]]]
-  override val deriver: DoubleDoubleDeriver = DeriverReversePlanDouble.tuple2
+  override val deriver: DoubleDoubleDeriver = DeriverReversePlan.tuple2
 
 }

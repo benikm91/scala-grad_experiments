@@ -1,13 +1,14 @@
 package scalagrad.api
 
+type DeriverFromTo[fT2, dfT2] = Deriver[fT2] { 
+    type dfT = dfT2 
+}
+
 trait Deriver[fT2]:
 
-    type fT = fT2
-
-    type dfInput
-    type dfOutput
-
-    type dfT = dfInput => dfOutput
+    final type fT = fT2
+    
+    type dfT
 
     def derive(f: fT): (dfT)
 

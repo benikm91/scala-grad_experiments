@@ -24,8 +24,7 @@ abstract class DeriveSpireNumericDoubleTests(val name: String) extends AnyWordSp
   type DNum[P]
   given spireNumericDNum: Numeric[DNum[Double]]
   type DoubleDeriver = Deriver[(DNum[Double]) => DNum[Double]] {
-    type dfInput = Double
-    type dfOutput = Double
+    type dfT = Double => Double
   }
   val deriver: DoubleDeriver
 

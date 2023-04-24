@@ -17,14 +17,14 @@ import scalagrad.spire.auto.test.DeriveSpireNumericDoubleDoubleTests
 
 import spire.math.Numeric
 import spire.implicits.*
-import scalagrad.auto.forward.DeriverForwardPlan.DeriverForwardPlanDouble
-
 import scalagrad.auto.forward.DeriverForwardPlan
+import scalagrad.auto.forward.DeriverForwardPlan.given
+
 class DeriverForwardSpireNumericDoubleDoubleTests extends DeriveSpireNumericDoubleDoubleTests("forward-mode") {
 
   override type DNum[P] = DualNumber[P]
   override val spireNumericDNum: Numeric[DualNumber[Double]] = summon[Numeric[DualNumber[Double]]]
-  override val deriver: DoubleDoubleDeriver = DeriverForwardPlanDouble.tuple2
+  override val deriver: DoubleDoubleDeriver = DeriverForwardPlan.tuple2
 
 }
 

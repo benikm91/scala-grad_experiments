@@ -21,8 +21,7 @@ abstract class DoubleDoubleBasicTests(val name: String) extends AnyWordSpec with
   type T
   given fractionalDNum: Fractional[T]
   type DoubleDoubleDeriver = Deriver[(T, T) => T] {
-    type dfInput = (Double, Double)
-    type dfOutput = (Double, Double)
+    type dfT = (Double, Double) => (Double, Double)
   }
   val deriver: DoubleDoubleDeriver 
 

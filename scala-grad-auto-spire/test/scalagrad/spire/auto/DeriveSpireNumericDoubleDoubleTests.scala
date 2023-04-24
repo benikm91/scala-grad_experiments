@@ -24,8 +24,7 @@ abstract class DeriveSpireNumericDoubleDoubleTests(val name: String) extends Any
   type DNum[P]
   given spireNumericDNum: Numeric[DNum[Double]]
   type DoubleDoubleDeriver = Deriver[(DNum[Double], DNum[Double]) => DNum[Double]] {
-    type dfInput = (Double, Double)
-    type dfOutput = (Double, Double)
+    type dfT = (Double, Double) => (Double, Double)
   }
   val deriver: DoubleDoubleDeriver
 

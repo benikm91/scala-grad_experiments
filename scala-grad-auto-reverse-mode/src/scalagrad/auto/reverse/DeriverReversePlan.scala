@@ -12,15 +12,14 @@ import scalagrad.auto.reverse.eval.Eval
 
 import scala.math.Fractional.Implicits.given
 
-trait DeriverReversePlan[P: Fractional] extends DeriverPlan[P, DualDelta.D[P], DualDelta[P]]:
+object DeriverReversePlan:
 
-    val one: P
-    val zero: P
-    val fractional: Fractional[P]
+    export DeriverPlan.given
 
-    given vector2Vector: Deriver[Vector[DualDelta[P]] => Vector[DualDelta[P]]] with
-        override type dfInput = Vector[P]
-        override type dfOutput = Vector[Vector[P]]
+    given vector2Vector[P](using frac: Fractional[P]): Deriver[Vector[DualDelta[P]] => Vector[DualDelta[P]]] with
+        
+        override type dfT = Vector[P] => Vector[Vector[P]]
+        
         override def derive(f: fT): dfT = 
             xs => {
                 val keyXs = xs.indices
@@ -32,19 +31,9 @@ trait DeriverReversePlan[P: Fractional] extends DeriverPlan[P, DualDelta.D[P], D
                 val deltas = toDelta(xs)
                 // val dfs = Eval.eval(frac.one)(delta)(keyXs.map((_, frac.zero)).toMap)
                 val dfsV = deltas.map(delta => 
-                    Eval.evalNonRecursive(delta, keyXs.map((_, zero)).toMap)(using fractional)
+                    Eval.evalNonRecursive(delta, keyXs.map((_, frac.zero)).toMap)(using frac)
                 )
                 dfsV.map(dfs =>
                     (for (keyX <- keyXs) yield dfs(keyX)).toVector
                 ).transpose
             }
-
-object DeriverReversePlan:
-
-    object DeriverReversePlanDouble extends DeriverReversePlan[Double] {
-        val fractional: Fractional[Double] = summon[Fractional[Double]]
-        val one = 1.0
-        val zero = 0.0
-    }
-
-    export DeriverReversePlanDouble.given

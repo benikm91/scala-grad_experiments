@@ -8,13 +8,13 @@ import scala.runtime.Tuples
 
 import scalagrad.auto.forward.dual.DualNumber
 
-trait DeriverForwardPlan[P](using frac: Fractional[P]) extends DeriverPlan[P, P, DualNumber[P]]:
+object DeriverForwardPlan:
 
-    given vector2Vector: Deriver[Vector[DualNumber[P]] => Vector[DualNumber[P]]] with
-    
-        override type dfInput = Vector[P]
-        
-        override type dfOutput = Vector[Vector[P]]
+    export DeriverPlan.given
+
+    given vector2Vector[P](using frac: Fractional[P]): Deriver[Vector[DualNumber[P]] => Vector[DualNumber[P]]] with
+
+        override type dfT = Vector[P] => Vector[Vector[P]]
         
         override def derive(f: fT): dfT =
             xs =>(
@@ -25,10 +25,3 @@ trait DeriverForwardPlan[P](using frac: Fractional[P]) extends DeriverPlan[P, P,
                     } yield DualNumber[P](x, dxi)
                 )).map(_.dv)
             ).toVector
-
-    
-object DeriverForwardPlan:
-
-    object DeriverForwardPlanDouble extends DeriverForwardPlan[Double]
-
-    export DeriverForwardPlanDouble.given
