@@ -88,6 +88,9 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
   .settings(
       name := "showcase-deep-learning",
       basicSettings,
+      libraryDependencies  ++= Seq(
+        "org.scalanlp" %% "breeze" % "2.1.0",
+      )
     ).dependsOn(
       scalaGradAutoFractional,
       scalaGradAutoSpire,
