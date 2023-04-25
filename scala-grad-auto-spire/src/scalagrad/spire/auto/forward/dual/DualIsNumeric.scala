@@ -180,7 +180,7 @@ object DualIsNumeric:
 
         override def isWhole(a: PD): Boolean = num.isWhole(a.v)
 
-    given [A: Field, D, PD <: Dual[A, D, PD]](using trig: Trig[A], cd: CreateDual[A, D, PD], ag: AdditiveGroup[A], nRoot: NRoot[A]): Trig[PD] with
+    given [A, D, PD <: Dual[A, D, PD]](using trig: Trig[A], cd: CreateDual[A, D, PD], num: Numeric[A], nRoot: NRoot[A]): Trig[PD] with
 
         def chain(f: A => A, df: A => A)(dn: PD) =
             cd.create(
@@ -197,7 +197,8 @@ object DualIsNumeric:
             def dExp(v: A): A = trig.exp(v)
             chain(trig.exp, dExp)(a)
         override def expm1(a: PD): PD = ???
-        override def log(a: PD): PD = ???
+        override def log(a: PD): PD = 
+            1 / a
         override def log1p(a: PD): PD = ???
         override def sin(a: PD): PD = 
             def dSin(v: A): A = trig.cos(v)
@@ -206,16 +207,16 @@ object DualIsNumeric:
             def dCos(v: A): A = -trig.sin(v)
             chain(trig.cos, dCos)(a)
         override def tan(a: PD): PD = 
-            def dTan(v: A): A = 1 / (trig.cos(v) * trig.cos(v))
+            def dTan(v: A): A = num.one / (trig.cos(v) * trig.cos(v))
             chain(trig.tan, dTan)(a)
         override def asin(a: PD): PD = 
-            def dAsin(v: A): A = 1 / nRoot.sqrt(1 - v * v)
+            def dAsin(v: A): A = num.one / nRoot.sqrt(1 - v * v)
             chain(trig.asin, dAsin)(a)
         override def acos(a: PD): PD =
-            def dAcos(v: A): A = - (1 / nRoot.sqrt(1 - v * v))
+            def dAcos(v: A): A = - (num.one / nRoot.sqrt(1 - v * v))
             chain(trig.acos, dAcos)(a)
         override def atan(a: PD): PD = 
-            def dAtan(v: A): A = 1 / (v * v + 1)
+            def dAtan(v: A): A = num.one / (v * v + num.one)
             chain(trig.atan, dAtan)(a)
         override def atan2(y: PD, x: PD): PD = ???
         override def sinh(x: PD): PD = 
@@ -225,13 +226,13 @@ object DualIsNumeric:
             def dCosh(v: A): A = trig.sinh(v)
             chain(trig.cosh, dCosh)(x)
         override def tanh(x: PD): PD =
-            def dTanh(v: A): A = 1 / (trig.cosh(v) * trig.cosh(v))
+            def dTanh(v: A): A = num.one / (trig.cosh(v) * trig.cosh(v))
             chain(trig.tanh, dTanh)(x)
         override def toRadians(a: PD): PD = 
-            def dToRadians(v: A): A = trig.pi / 180
+            def dToRadians(v: A): A = trig.pi / num.fromInt(180)
             chain(trig.toRadians, dToRadians)(a)
         override def toDegrees(a: PD): PD =
-            def dToDegrees(v: A): A = 180 / trig.pi
+            def dToDegrees(v: A): A = num.fromInt(180) / trig.pi
             chain(trig.toDegrees, dToDegrees)(a)
  
     /* TODO 
