@@ -30,6 +30,17 @@ abstract class DeriveSpireNumericDoubleTests(val name: String) extends AnyWordSp
 
   val tolerance = 1e-2
 
+  def testF(f: [T] => (x: T) => (num: Numeric[T]) ?=> T) = 
+    val (min, max) = (1e-3, 1e+3)
+    forAll(Gen.choose(min, max)) { (x: Double) =>
+      whenever(min <= x && x <= max) {
+        val approxDx: Double = ScalaGrad.derive(f[Double])(using approx(1e-6))(x)
+        val df = ScalaGrad.derive(f[DNum[Double]])(using deriver)
+        val dx = df(x)
+        dx should be(approxDx +- tolerance)
+      }
+    }
+
   f"${name} deriviation" should {
     "work for nroot" in {
       val (min, max) = (1e-3, 1e+3)
@@ -44,15 +55,41 @@ abstract class DeriveSpireNumericDoubleTests(val name: String) extends AnyWordSp
       }
     }
     "work for negate" in {
-      val (min, max) = (1e-3, 1e+3)
-      forAll(Gen.choose(min, max)) { (x: Double) =>
-        def f = [T] => (x: T) => (num: Numeric[T]) ?=> num.negate(x)
-        whenever(min <= x && x <= max) {
-          val approxDx: Double = ScalaGrad.derive(f[Double])(using approx(1e-6))(x)
-          val df = ScalaGrad.derive(f[DNum[Double]])(using deriver)
-          val dx = df(x)
-          dx should be(approxDx +- tolerance)
-        }
-      }
+      testF([T] => (x: T) => (num: Numeric[T]) ?=> 
+        num.negate(x)
+      )
     }
+    "work for round" in {
+      testF([T] => (x: T) => (num: Numeric[T]) ?=> 
+        num.round(x)
+      )
+    }
+    "work for ceil" in {
+      testF([T] => (x: T) => (num: Numeric[T]) ?=> 
+        num.ceil(x)
+      )
+    }
+    "work for floor" in {
+      testF([T] => (x: T) => (num: Numeric[T]) ?=> 
+        num.floor(x)
+      )
+    }
+
+    // exp
+    // expm1
+    // log
+    // log1p
+    // sin
+    // cos
+    // tan
+    // asin
+    // acos
+    // atan
+    // atan2
+    // sinh
+    // cosh
+    // tanh
+    // toRadians
+    // toDegrees
+
   }

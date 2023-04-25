@@ -66,9 +66,7 @@ object DualIsNumeric:
 
         override def floor(a: PD): PD = 
             def dFloor(v: T): T = 
-                // TODO what to do here?
-                // f(x) = x + 0.5 approximates the step function of ceil best, which derivative would be 1
-                return num.one
+                return num.zero
             chain(num.ceil, dFloor)(a)
 
         override def plus(x: PD, y: PD): PD = x + y
@@ -98,26 +96,19 @@ object DualIsNumeric:
 
         override def ceil(a: PD): PD =
             def dCeil(v: T): T = 
-                // TODO what to do here?
-                // f(x) = x - 0.5 approximates the step function of ceil best, which derivative would be 1
-                return num.one
+                return num.zero
             chain(num.ceil, dCeil)(a)
 
         override def toBigInt(a: PD): BigInt = num.toBigInt(a.v)
 
         override def abs(a: PD): PD =
             def dAbs(v: T): T = 
-                if (num.signum(v) == 0) then
-                    ???  // TODO what to do here?
-                else
-                    num.fromInt(num.signum(v))
+                num.fromInt(num.signum(v))
             chain(num.abs, dAbs)(a)
 
         override def round(a: PD): PD =
             def dRound(v: T): T = 
-                // TODO what to do here?
-                // f(x) = x approximates the step function of ceil best, which derivative would be 1
-                return num.one
+                return num.zero
             chain(num.round, dRound)(a)
 
         override def fromBigDecimal(n: BigDecimal): PD = lift(num.fromBigDecimal(n))
@@ -193,13 +184,15 @@ object DualIsNumeric:
 
         override def e: PD = lift(trig.e)
         override def pi: PD = lift(trig.pi)
-        override def exp(a: PD): PD = 
-            def dExp(v: A): A = trig.exp(v)
-            chain(trig.exp, dExp)(a)
-        override def expm1(a: PD): PD = ???
+        def dExp(a: A): A = trig.exp(a)
+        override def exp(a: PD): PD = chain(trig.exp, dExp)(a)
+        override def expm1(a: PD): PD = chain(trig.expm1, dExp)(a)
         override def log(a: PD): PD = 
-            1 / a
-        override def log1p(a: PD): PD = ???
+            def dLog(a: A): A = num.one / a
+            chain(trig.log, dLog)(a)
+        override def log1p(a: PD): PD = 
+            def dLog1p(a: A): A = num.one / (1 + a)
+            chain(trig.log1p, dLog1p)(a)
         override def sin(a: PD): PD = 
             def dSin(v: A): A = trig.cos(v)
             chain(trig.sin, dSin)(a)
@@ -235,188 +228,3 @@ object DualIsNumeric:
             def dToDegrees(v: A): A = num.fromInt(180) / trig.pi
             chain(trig.toDegrees, dToDegrees)(a)
  
-    /* TODO 
-     * Can I somehow implement the super types of numeric and then give a Numeric instance based on them?  
-     * Note that I don't want to repeat implementations like times etc.
-     * */
-/*
-    given [T](using r: Ring[T]): Ring[PD] with
-        override def zero: PD = DualNumber(r.one, r.zero)
-        override def one: DualNumber[T] = DualNumber(r.zero, r.zero)
-        override def negate(x: DualNumber[T]): DualNumber[T] = applyBoth(r.negate)(x)
-        override def times(x: DualNumber[T], y: DualNumber[T]): DualNumber[T] = 
-            def productRule(u: T, du: T, v: T, dv: T): T = 
-                du * v + u * dv
-            DualNumber[T](x.v * y.v, productRule(x.v, x.dv, y.v, y.dv))
-        
-        override def plus(x: DualNumber[T], y: DualNumber[T]): DualNumber[T] =
-            DualNumber(x.v + y.v, x.dv + y.dv)
-
-    given [T](using ro: NRoot[T], f: Field[T]): NRoot[DualNumber[T]] with
-        override def nroot(a: DualNumber[T], n: Int): DualNumber[T] =
-            chain(x => ro.nroot(x, n), x => ro.fpow(x, f.one / f.fromInt(n - 1)) / n)(a)
-        override def fpow(a: DualNumber[T], b: DualNumber[T]): DualNumber[T] =
-            def log(x: T): T = ???  // TODO Trigometric function not part of Numeric :( => add trigometric type class
-            // Source: https://www.wolframalpha.com/input?i=f%28x%29%5Eg%28x%29+derivative
-            val dfpow = ro.fpow(a.v, b.v - 1) * (b.v * a.dv + a.v * log(a.v) * b.dv)
-            DualNumber(ro.fpow(a.v, b.v), dfpow)
-
-    given cfa[A](using am: ConvertableFrom[A]): ConvertableFrom[PD] = 
-        DeriverSpireNumeric.createConvertableFrom(_.v)
-
-    given[A](using am: ConvertableTo[A]): ConvertableTo[DualNumber[A]] = 
-        DeriverSpireNumeric.createConvertableTo(x => DualNumber(x, am.fromInt(0)))
-
-    given[A](using ir: IsReal[A], ag: AdditiveGroup[A], mm: MultiplicativeMonoid[A]): IsReal[DualNumber[A]] with
-        override def ceil(a: DualNumber[A]): DualNumber[A] = 
-            def dCeil(v: A): A = 
-                // TODO what to do here?
-                // f(x) = x - 0.5 approximates the step function of ceil best, which derivative would be 1
-                return mm.one
-            chain(ir.ceil, dCeil)(a)
-
-        override def floor(a: DualNumber[A]): DualNumber[A] =
-            def dFloor(v: A): A = 
-                // TODO what to do here?
-                // f(x) = x + 0.5 approximates the step function of ceil best, which derivative would be 1
-                return mm.one
-            chain(ir.floor, dFloor)(a)
-
-        override def round(a: DualNumber[A]): DualNumber[A] =
-            def dRound(v: A): A = 
-                // TODO what to do here?
-                // f(x) = x approximates the step function of ceil best, which derivative would be 1
-                return mm.one
-            chain(ir.round, dRound)(a)
-
-        override def isWhole(a: DualNumber[A]): Boolean = ir.isWhole(a.v)
-        override def toDouble(a: DualNumber[A]): Double = ir.toDouble(a.v)
-        override def toReal(a: DualNumber[A]): Real = ir.toReal(a.v)
-        override def compare(x: DualNumber[A], y: DualNumber[A]): Int = ir.compare(x.v, y.v)
-
-        override def abs(a: DualNumber[A]): DualNumber[A] =
-            def dAbs(v: A): A = 
-                if (ir.signum(v) == 0) then
-                    ???  // TODO what to do here?
-                else
-                    ir.sign(v) match
-                        case Zero => ag.zero
-                        case Positive => mm.one
-                        case Negative => ag.negate(mm.one)
-                    
-            chain(ir.abs, dAbs)(a)
-
-        override def additiveCommutativeMonoid: AdditiveCommutativeMonoid[DualNumber[A]] = ???
-        override def order: Order[DualNumber[A]] = new Order {
-          override def compare(x: DualNumber[A], y: DualNumber[A]): Int = ir.order.compare(x.v, y.v)
-        }
-        override def signum(a: DualNumber[A]): Int = ir.signum(a.v)
-
-    given [A](using mag: MultiplicativeAbGroup[A], mm: MultiplicativeMonoid[DualNumber[A]], ag: AdditiveGroup[A]): MultiplicativeAbGroup[DualNumber[A]] with
-        override def one: DualNumber[A] = mm.one
-        override def times(x: DualNumber[A], y: DualNumber[A]): DualNumber[A] = mm.times(x, y)
-        override def reciprocal(a: DualNumber[A]): DualNumber[A] = 
-            DualNumber(one.v / a.v, -a.dv / (a.v * a.v))
-        override def div(x: DualNumber[A], y: DualNumber[A]): DualNumber[A] =
-            def quotientRule(u: A, du: A, v: A, dv: A): A =
-                (du * v - u * dv) / (v * v)
-            DualNumber[A](x.v / y.v, quotientRule(x.v, x.dv, y.v, y.dv))
-
-    // This breaks implicit search. I think because Numeric is a Ring therefore it loops on itself.
-    given[A](using
-        ring: Ring[DualNumber[A]],
-        additiveAbGroup: AdditiveAbGroup[DualNumber[A]],
-        multiplicativeAbGroup: MultiplicativeAbGroup[DualNumber[A]],
-        nRoot: NRoot[DualNumber[A]],
-        convertableFrom: ConvertableFrom[DualNumber[A]],
-        convertableTo: ConvertableTo[DualNumber[A]],
-        isReal: IsReal[DualNumber[A]],
-    ): Numeric[DualNumber[A]] = 
-        new Numeric[DualNumber[A]] {
-
-        // export clause did not work here :(
-
-        override def fromFloat(n: Float): DualNumber[A] = convertableTo.fromFloat(n)
-
-        override def additiveCommutativeMonoid: AdditiveCommutativeMonoid[DualNumber[A]] = isReal.additiveCommutativeMonoid
-
-        override def times(x: DualNumber[A], y: DualNumber[A]): DualNumber[A] = ring.times(x, y)
-
-        override def toNumber(a: DualNumber[A]): Number = convertableFrom.toNumber(a)
-
-        override def order: Order[DualNumber[A]] = ???
-
-        override def toType[B: ConvertableTo](a: DualNumber[A]): B = convertableFrom.toType(a)
-
-        override def toDouble(a: DualNumber[A]): Double = convertableFrom.toDouble(a)
-
-        override def toReal(a: DualNumber[A]): Real = convertableFrom.toReal(a)
-
-        override def negate(x: DualNumber[A]): DualNumber[A] = ring.negate(x)
-
-        override def fromType[B: ConvertableFrom](b: B): DualNumber[A] = convertableTo.fromType(b)
-
-        override def toByte(a: DualNumber[A]): Byte = convertableFrom.toByte(a)
-
-        override def nroot(a: DualNumber[A], n: Int): DualNumber[A] = nRoot.nroot(a, n)
-
-        override def signum(a: DualNumber[A]): Int = isReal.signum(a)
-
-        override def fromBigDecimal(n: BigDecimal): DualNumber[A] = convertableTo.fromBigDecimal(n)
-
-        override def fromAlgebraic(n: Algebraic): DualNumber[A] = convertableTo.fromAlgebraic(n)
-
-        override def one: DualNumber[A] = ring.one
-
-        override def abs(a: DualNumber[A]): DualNumber[A] = ???
-
-        override def fpow(a: DualNumber[A], b: DualNumber[A]): DualNumber[A] = nRoot.fpow(a, b)
-
-        override def compare(x: DualNumber[A], y: DualNumber[A]): Int = ???
-
-        override def plus(x: DualNumber[A], y: DualNumber[A]): DualNumber[A] = ring.plus(x, y)
-
-        override def toRational(a: DualNumber[A]): Rational = convertableFrom.toRational(a)
-
-        override def fromShort(n: Short): DualNumber[A] = convertableTo.fromShort(n)
-
-        override def toFloat(a: DualNumber[A]): Float = convertableFrom.toFloat(a)
-
-        override def toAlgebraic(a: DualNumber[A]): Algebraic = convertableFrom.toAlgebraic(a)
-
-        override def isWhole(a: DualNumber[A]): Boolean = isReal.isWhole(a)
-
-        override def toBigInt(a: DualNumber[A]): BigInt = convertableFrom.toBigInt(a)
-
-        override def fromReal(n: Real): DualNumber[A] = convertableTo.fromReal(n)
-
-        override def toString(a: DualNumber[A]): String = convertableFrom.toString(a)
-
-        override def toShort(a: DualNumber[A]): Short = convertableFrom.toShort(a)
-
-        override def toInt(a: DualNumber[A]): Int = convertableFrom.toInt(a)
-
-        override def zero: DualNumber[A] = ring.zero
-
-        override def fromDouble(n: Double): DualNumber[A] = convertableTo.fromDouble(n)
-
-        override def toBigDecimal(a: DualNumber[A]): BigDecimal = convertableFrom.toBigDecimal(a)
-
-        override def ceil(a: DualNumber[A]): DualNumber[A] = isReal.ceil(a)
-
-        override def div(x: DualNumber[A], y: DualNumber[A]): DualNumber[A] = ???
-
-        override def round(a: DualNumber[A]): DualNumber[A] = isReal.round(a)
-
-        override def fromRational(n: Rational): DualNumber[A] = convertableTo.fromRational(n)
-
-        override def fromLong(n: Long): DualNumber[A] = convertableTo.fromLong(n)
-
-        override def toLong(a: DualNumber[A]): Long = convertableFrom.toLong(a)
-
-        override def floor(a: DualNumber[A]): DualNumber[A] = isReal.floor(a)
-
-        override def fromByte(n: Byte): DualNumber[A] = convertableTo.fromByte(n)
-
-    }
-*/
