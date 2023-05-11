@@ -2,14 +2,29 @@ ThisBuild / version := "0.0.1"
 ThisBuild / scalaVersion := "3.2.2"
 ThisBuild / organization := "ch.benikm91"
 
+lazy val scalismoDependency = Seq(
+  libraryDependencies ++= Seq(
+    "ch.unibas.cs.gravis" %% "scalismo" % "0.91.0",
+    "ch.unibas.cs.gravis" %% "scalismo-ui" % "0.91.0"
+  )
+)
+
 lazy val scalaTestSettings = Seq(
-  libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.14" % Test, 
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % Test,
-  libraryDependencies += "org.scalatestplus" %% "scalacheck-1-17" % "3.2.14.0" % Test
+  libraryDependencies ++= Seq(
+    "org.scalactic" %% "scalactic" % "3.2.14" % Test, 
+    "org.scalatest" %% "scalatest" % "3.2.14" % Test,
+    "org.scalatestplus" %% "scalacheck-1-17" % "3.2.14.0" % Test
+  )
 )
 
 lazy val spireDependency = Seq(
     libraryDependencies += "org.typelevel" %% "spire" % "0.18.0"
+)
+
+lazy val breezeDependency = Seq(
+  libraryDependencies ++= Seq(
+    "org.scalanlp" %% "breeze" % "2.1.0",
+  )
 )
 
 lazy val basicSettings = Seq(
@@ -88,13 +103,26 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
   .settings(
       name := "showcase-deep-learning",
       basicSettings,
-      libraryDependencies  ++= Seq(
-        "org.scalanlp" %% "breeze" % "2.1.0",
-      )
+      breezeDependency,
     ).dependsOn(
       scalaGradAutoFractional,
       scalaGradAutoSpire,
     )
+
+// Show library usage
+lazy val showcaseProbabilisticProgramming = (project in file("./showcases/showcase-probablistic-programming"))
+  .settings(
+      name := "showcase-probablistic-programming",
+      basicSettings,
+      breezeDependency,
+      scalismoDependency,
+    ).dependsOn(
+      scalaGradAutoFractional,
+      scalaGradAutoSpire,
+      scalismoPlot,
+    )
+
+lazy val scalismoPlot = RootProject(file("../scalismo-plot"))
 
 lazy val root = (project in file("."))
   .settings(
