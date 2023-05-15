@@ -19,8 +19,12 @@ import spire.compat.numeric
 import scalismo.plot.data.DataFrame
 import scalismo.plot.data.DataFrame.Column
 import scalismo.plot.plottarget.PlotTargets.plotTargetBrowser
+import scala.util.Random
 
 import scalagrad.api.ScalaGrad
+import scalagrad.showcase.probabilisticProgramming.distribution.{UnnormalizedDistribution, UnnormalizedLogDistribution}
+import scalagrad.showcase.probabilisticProgramming.metropolisHastings.GaussianMetropolisSampler
+import scalagrad.showcase.probabilisticProgramming.metropolisHastings.MetropolisAdjustedLangevinAlgorithmSampler
 
 object MHSampling extends App {
 
@@ -32,7 +36,7 @@ object MHSampling extends App {
     import breeze.numerics.step
     import breeze.numerics.exp
 
-    val rng = new scala.util.Random()
+    val rng = new Random()
 
     // target distribution from which we want to sample
     def p[T: Numeric: Trig](x: Vector[T], mean: Vector[T], cov: Vector[Vector[T]]): T = {
@@ -53,27 +57,25 @@ object MHSampling extends App {
     
     def pDualNumber(x: Vector[DualNumber[Double]]): DualNumber[Double] = p[DualNumber[Double]](x, meanDN, covarianceDN)
 
-    lazy val metroSamples = {
-        import Util.*
-
-        val q = gaussianProposal
-        metropolisSampler(rng)(pDouble, q(stepSize))(initialSample)
+    lazy val metroSamples =
+        GaussianMetropolisSampler(
+            new Random(),
+            stepSize, 
+        )
+            .apply(UnnormalizedLogDistribution(pDouble), initialSample)
             .drop(10_000)
             .take(25_000).toSeq
-    }
 
-    lazy val malaSamples = {
-        val rng = new scala.util.Random()
-        val mala = MALA(rng)
-        import mala.*
-        
-        val dPosterior = ScalaGrad.derive(pDualNumber)
-        val q = langevinDynamicsProposal(dPosterior, stepSize, 1.0)
-        val g = gDef(dPosterior, stepSize)
-        hastingsSample(pDouble, q, g)(initialSample)
+    lazy val malaSamples = 
+        MetropolisAdjustedLangevinAlgorithmSampler(
+            new Random(),
+            ScalaGrad.derive(pDualNumber),
+            stepSize,
+            sigma = 1.0
+        )
+            .apply(UnnormalizedLogDistribution(pDouble), initialSample)
             .drop(10_000)
             .take(25_000).toSeq
-    }
 
     lazy val bMetroSamples = metroSamples.map(s => DenseVector(s.toArray))
 
@@ -105,6 +107,11 @@ object MHSampling extends App {
 
 }
 
+/**
+ * Stuff that is in Scalismo but I need to implement it here abstractly with Spire to make it work with ScalaGrad.
+ * 
+ * Code mostly generated with ChatGPT.
+ */
 object Stuff:
     import spire.math.Numeric
     import spire.algebra.Trig

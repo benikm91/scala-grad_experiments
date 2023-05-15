@@ -16,6 +16,11 @@ import scalagrad.auto.forward.DeriverForwardPlan.given
 import breeze.stats.distributions.Rand.FixedSeed.randBasis
 import scala.math.{sqrt, exp, min}
 import breeze.linalg.{DenseVector, DenseMatrix}
+import scala.util.Random
+
+import scalagrad.showcase.probabilisticProgramming.distribution.{UnnormalizedDistribution, UnnormalizedLogDistribution}
+import scalagrad.showcase.probabilisticProgramming.metropolisHastings.GaussianMetropolisSampler
+import scalagrad.showcase.probabilisticProgramming.metropolisHastings.MetropolisAdjustedLangevinAlgorithmSampler
 
 extension [T: Numeric](x1: Int)
     def *(x2: T): T = 
@@ -71,12 +76,6 @@ extension [T: Numeric](x1: Int)
             (y - yHat) * (y - yHat)
         }.sum / fromInt(ys.size * 2)
 
-    // Sampling
-    val rng = new scala.util.Random()
-    import Util.*
-    val mala = MALA(rng)
-    import mala.*
-
     // running the chain
     val initialSample = Vector(0.0, 0.0, 0.0, 0.0, 0.0)
 
@@ -86,19 +85,20 @@ extension [T: Numeric](x1: Int)
     def ewOp(op: (Double, Double) => Double)(a: Vector[Double], b: Vector[Double]): Vector[Double] = 
         a.zip(b).map(op(_, _))
     
-    def mean(samples: Seq[Sample]) = samples.reduce(ewOp(_ + _)).map(_ / samples.size.toDouble)
-    def cov(samples: Seq[Sample], mean: Sample) = samples.map(s => ewOp(_ - _)(s, mean).map(x => x * x)).reduce(ewOp(_ + _)).map(_ / samples.size.toDouble)
+    def mean(samples: Seq[Vector[Double]]) = samples.reduce(ewOp(_ + _)).map(_ / samples.size.toDouble)
+    def cov(samples: Seq[Vector[Double]], mean: Vector[Double]) = samples.map(s => ewOp(_ - _)(s, mean).map(x => x * x)).reduce(ewOp(_ + _)).map(_ / samples.size.toDouble)
 
-    def predictWith(weights: Sample): Vector[Double] = 
+    def predictWith(weights: Vector[Double]): Vector[Double] = 
         StandardScaler.inverseScaleColumn(xs_ss.map(x => predict(x, weights)), ys_mean, ys_std)
 
     {
         println("MALA")
 
         val dPosterior = ScalaGrad.derive(posterior)
-        val q = langevinDynamicsProposal(dPosterior, stepSize, 1.0)
-        val g = gDef(dPosterior, stepSize)
-        val samples = hastingsSample(posteriorDouble, q, g)(initialSample)
+        val samples = MetropolisAdjustedLangevinAlgorithmSampler(new Random(), dPosterior, stepSize, 1.0).apply(
+            UnnormalizedLogDistribution(posteriorDouble), 
+            initialSample
+        )
             .drop(50_000)
             .take(10_000).toSeq
 
@@ -115,7 +115,7 @@ extension [T: Numeric](x1: Int)
     {
         println("Metropolis Hastings")
 
-        val samples = metropolisSampler(rng)(posteriorDouble, gaussianProposal(stepSize))(initialSample)
+        val samples = GaussianMetropolisSampler(new Random(), stepSize).apply(UnnormalizedLogDistribution(posteriorDouble), initialSample)
             .drop(50_000)
             .take(10_000).toSeq
             
