@@ -75,21 +75,4 @@ abstract class DeriveSpireNumericDoubleTests(val name: String) extends AnyWordSp
       )
     }
 
-    // exp
-    // expm1
-    // log
-    // log1p
-    // sin
-    // cos
-    // tan
-    // asin
-    // acos
-    // atan
-    // atan2
-    // sinh
-    // cosh
-    // tanh
-    // toRadians
-    // toDegrees
-
   }
