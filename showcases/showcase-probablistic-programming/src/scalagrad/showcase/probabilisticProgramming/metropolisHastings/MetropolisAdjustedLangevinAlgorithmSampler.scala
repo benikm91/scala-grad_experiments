@@ -22,3 +22,5 @@ extends MetropolisHastingsSampler:
     override val uniform = ScalaUniformRandomGenerator(rng)
     override val proposer = LangevinDynamicsProposer(dTarget, stepSize, sigma)
     override val pcd = LangevinDynamicsProposerConditionalDistribution(dTarget, stepSize)
+
+    def showHyperParams: String = "stepSize = " + stepSize + ", sigma = " + sigma

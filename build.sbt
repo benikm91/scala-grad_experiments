@@ -9,6 +9,11 @@ lazy val scalismoDependency = Seq(
   )
 )
 
+lazy val scaltirDependency = Seq(
+      resolvers +=  Resolver.sonatypeRepo("snapshots"), 
+      libraryDependencies += "ch.unibas.cs.gravis" %% "scaltair" % "0.1-SNAPSHOT"
+)
+
 lazy val scalaTestSettings = Seq(
   libraryDependencies ++= Seq(
     "org.scalactic" %% "scalactic" % "3.2.14" % Test, 
@@ -33,7 +38,7 @@ lazy val basicSettings = Seq(
     Test / scalaSource := baseDirectory.value / "test",
 )
 
-// Provides basic API
+// ScalaGrad API
 lazy val scalaGradApi = (project in file("./scala-grad-api"))
   .settings(
     name := "scala-grad-api",
@@ -41,7 +46,7 @@ lazy val scalaGradApi = (project in file("./scala-grad-api"))
     scalaTestSettings,
   )
   
-// Implements API with Numerical Differentitation
+// Numerical Differentitation
 lazy val scalaGradNumericalDifferentiation = (project in file("./scala-grad-numerical-differentiation"))
   .settings(
     name := "scala-grad-numerical-differentiation",
@@ -52,7 +57,7 @@ lazy val scalaGradNumericalDifferentiation = (project in file("./scala-grad-nume
     scalaGradApi % "test->test",
   )
 
-// Implements API with forward-mode of Automatic Differentitation
+// Forward-mode 
 lazy val scalaGradAutoForwardMode = (project in file("./scala-grad-auto-forward-mode"))
   .settings(
     name := "scala-grad-auto-forward-mode",
@@ -63,7 +68,7 @@ lazy val scalaGradAutoForwardMode = (project in file("./scala-grad-auto-forward-
     scalaGradApi % "test->test",
   )
 
-// Implements API with reverse-mode of Automatic Differentitation
+// Reverse-mode
 lazy val scalaGradAutoReverseMode = (project in file("./scala-grad-auto-reverse-mode"))
   .settings(
     name := "scala-grad-auto-reverse-mode",
@@ -74,7 +79,7 @@ lazy val scalaGradAutoReverseMode = (project in file("./scala-grad-auto-reverse-
     scalaGradApi % "test->test",
   )
 
-// Extends forward-mode to work with scala.math.fractional
+// Add derivers for scala.math.fractional
 lazy val scalaGradAutoFractional = (project in file("./scala-grad-auto-fractional"))
   .settings(
     name := "scala-grad-auto-fractional",
@@ -85,13 +90,26 @@ lazy val scalaGradAutoFractional = (project in file("./scala-grad-auto-fractiona
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
-// Extends forward-mode to work with spire.math.numeric
+// Add derivers for spire.math.numeric
 lazy val scalaGradAutoSpire = (project in file("./scala-grad-auto-spire"))
   .settings(
     name := "scala-grad-auto-spire",
     basicSettings,
     scalaTestSettings,
     spireDependency,
+  ).dependsOn(
+    scalaGradAutoForwardMode,
+    scalaGradAutoReverseMode,
+    scalaGradNumericalDifferentiation % "test->compile;test->test",
+  )
+  
+// Add derivers for breeze.linalg.Vector
+lazy val scalaGradBreezeVector = (project in file("./scala-grad-breeze-vector"))
+  .settings(
+    name := "scala-grad-breeze-vector",
+    basicSettings,
+    scalaTestSettings,
+    breezeDependency,
   ).dependsOn(
     scalaGradAutoForwardMode,
     scalaGradAutoReverseMode,
@@ -116,13 +134,11 @@ lazy val showcaseProbabilisticProgramming = (project in file("./showcases/showca
       basicSettings,
       breezeDependency,
       scalismoDependency,
+      scaltirDependency,
     ).dependsOn(
       scalaGradAutoFractional,
       scalaGradAutoSpire,
-      scalismoPlot,
     )
-
-lazy val scalismoPlot = RootProject(file("../scalismo-plot"))
 
 lazy val root = (project in file("."))
   .settings(
@@ -137,6 +153,7 @@ lazy val root = (project in file("."))
     // Implementations
     scalaGradAutoFractional,
     scalaGradAutoSpire,
+    scalaGradBreezeVector,
     // Showcases
     showcaseDeepLearning,
   )

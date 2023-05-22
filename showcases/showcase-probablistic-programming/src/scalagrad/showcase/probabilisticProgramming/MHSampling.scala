@@ -16,15 +16,15 @@ import spire.math.Numeric
 import spire.algebra.Trig
 import spire.implicits.*
 import spire.compat.numeric
-import scalismo.plot.data.DataFrame
-import scalismo.plot.data.DataFrame.Column
-import scalismo.plot.plottarget.PlotTargets.plotTargetBrowser
 import scala.util.Random
 
 import scalagrad.api.ScalaGrad
 import scalagrad.showcase.probabilisticProgramming.distribution.{UnnormalizedDistribution, UnnormalizedLogDistribution}
 import scalagrad.showcase.probabilisticProgramming.metropolisHastings.GaussianMetropolisSampler
 import scalagrad.showcase.probabilisticProgramming.metropolisHastings.MetropolisAdjustedLangevinAlgorithmSampler
+
+import scaltair.*
+import scaltair.PlotTargetBrowser.given
 
 object MHSampling extends App {
 
@@ -37,14 +37,17 @@ object MHSampling extends App {
     import breeze.numerics.exp
 
     val rng = new Random()
+    val numWarmup = 10_000
+    val numSamples = 2_000
 
     // target distribution from which we want to sample
     def p[T: Numeric: Trig](x: Vector[T], mean: Vector[T], cov: Vector[Vector[T]]): T = {
         val trig = summon[Trig[T]]
-        trig.log(Stuff.multivariateGaussianPdf(x, mean, cov))
+        Stuff.logMultivariateGaussianPdf(x, mean, cov)
+        // trig.log(Stuff.multivariateGaussianPdf(x, mean, cov))
     }
 
-    val stepSize = 0.1
+    val stepSize = 1.0
     val initialSample = Vector(0.0, 0.0)
 
     val mean = Vector(3.0, 1.0)
@@ -57,36 +60,50 @@ object MHSampling extends App {
     
     def pDualNumber(x: Vector[DualNumber[Double]]): DualNumber[Double] = p[DualNumber[Double]](x, meanDN, covarianceDN)
 
-    lazy val metroSamples =
+    // TODO is here really log?
+    lazy val metro =
         GaussianMetropolisSampler(
             new Random(),
             stepSize, 
         )
+    lazy val metroSamples = metro
             .apply(UnnormalizedLogDistribution(pDouble), initialSample)
-            .drop(10_000)
-            .take(25_000).toSeq
+            .drop(numWarmup)
+            .take(numSamples).toSeq
 
-    lazy val malaSamples = 
+    lazy val mala = 
         MetropolisAdjustedLangevinAlgorithmSampler(
             new Random(),
             ScalaGrad.derive(pDualNumber),
             stepSize,
             sigma = 1.0
         )
+    lazy val malaSamples = mala
             .apply(UnnormalizedLogDistribution(pDouble), initialSample)
-            .drop(10_000)
-            .take(25_000).toSeq
+            .drop(numWarmup)
+            .take(numSamples).toSeq
 
     lazy val bMetroSamples = metroSamples.map(s => DenseVector(s.toArray))
 
     lazy val metroMean = bMetroSamples.reduce(_ + _) / bMetroSamples.size.toDouble
     lazy val metroCov = bMetroSamples.map(s => (s - metroMean) * (s - metroMean).t).reduce(_ + _) / bMetroSamples.size.toDouble
 
-    // visualizing the samples
-    DataFrame.fromColumns(Seq(
-        Column.ofContinuous(bMetroSamples.map(s => s(0)), "x"),
-        Column.ofContinuous(bMetroSamples.map(s => s(1)), "y"),
-    )).plot.scatterPlot("x", "y", "metro samples").show()
+    def plotSamples(samples: Seq[Seq[Double]], title: String) =
+        val data = Data.fromRows(samples.map(v => Map("x1" -> v(0), "x2" -> v(1))))
+        val plot = Chart(data)
+            .encode(
+                Channel.X("x1", FieldType.Quantitative),
+                Channel.Y("x2", FieldType.Quantitative),
+            )
+            .markCircle()
+            .properties(
+                ChartProperties(
+                    title=s"$title $numSamples samples with $numWarmup warmup"
+                )
+            )
+            .show()
+
+    plotSamples(metroSamples, f"Metro (${metro.showHyperParams})")
 
     println(f"metroMean ${metroMean}")
     println(f"metroCov ${metroCov}")
@@ -96,14 +113,10 @@ object MHSampling extends App {
     lazy val malaMean = bMalaSamples.reduce(_ + _) / bMalaSamples.size.toDouble
     lazy val malaCov = bMalaSamples.map(s => (s - malaMean) * (s - malaMean).t).reduce(_ + _) / bMalaSamples.size.toDouble
 
+    plotSamples(malaSamples, f"MALA (${mala.showHyperParams})")
+
     println(f"malaMean ${malaMean}")
     println(f"malaCov ${malaCov}")
-
-    // visualizing the samples
-    DataFrame.fromColumns(Seq(
-        Column.ofContinuous(bMalaSamples.map(s => s(0)), "x"),
-        Column.ofContinuous(bMalaSamples.map(s => s(1)), "y"),
-    )).plot.scatterPlot("x", "y", "mala samples").show()
 
 }
 
@@ -111,12 +124,48 @@ object MHSampling extends App {
  * Stuff that is in Scalismo but I need to implement it here abstractly with Spire to make it work with ScalaGrad.
  * 
  * Code mostly generated with ChatGPT.
+ * 
+ * Scalismo Implementation:
+    def next(current: A, logger: AcceptRejectLogger[A]): A = {
+    // reference p value
+    val currentP = evaluator.logValue(current)
+    // proposal
+    val proposal = generator.propose(current)
+    val proposalP = evaluator.logValue(proposal)
+    // transition ratio
+    val t = generator.logTransitionRatio(current, proposal)
+    // acceptance probability
+    val a = proposalP - currentP - t
+
+    // accept or reject
+    if (a > 0.0 || random.scalaRandom.nextDouble() < exp(a)) {
+      logger.accept(current, proposal, generator, evaluator)
+      proposal
+    } else {
+      logger.reject(current, proposal, generator, evaluator)
+      current
+    }
+  }
+ * 
  */
 object Stuff:
     import spire.math.Numeric
     import spire.algebra.Trig
     import spire.implicits._
     import scala.reflect.ClassTag
+
+    def logMultivariateGaussianPdf[T: Numeric: Trig](x: Vector[T], mean: Vector[T], covariance: Vector[Vector[T]]): T = {
+        // todo implement log Multivariate Gaussian PDF with spire (numerical stable)
+        val trig = summon[Trig[T]]
+        val num = summon[Numeric[T]]
+        val n = x.length
+        val det = determinant(covariance)
+        val invCovariance = inverse(covariance)
+        val diff = subtractVectors(x, mean)
+        val exponent = num.fromDouble(-0.5) * dotProduct(diff, matrixVectorProduct(invCovariance, diff))
+        val coefficient = num.fromDouble(math.pow(2 * math.Pi, n)) * det
+        num.fromDouble(-0.5) * trig.log(coefficient) + exponent
+    }
 
     def multivariateGaussianPdf[T: Numeric: Trig](x: Vector[T], mean: Vector[T], covariance: Vector[Vector[T]]): T = {
         val trig = summon[Trig[T]]

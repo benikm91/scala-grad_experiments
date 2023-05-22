@@ -12,3 +12,5 @@ case class GaussianMetropolisSampler(
     override type Sample = Vector[Double]
     override val uniform = ScalaUniformRandomGenerator(rng)
     override val proposer = GaussianProposer(stepSize)
+
+    def showHyperParams: String = "stepSize = " + stepSize
