@@ -38,27 +38,40 @@ object MHSampling extends App {
 
     val rng = new Random()
     val numWarmup = 10_000
-    val numSamples = 2_000
+    val numSamples = 12_000
+ 
+    // target distribution from which we want to sample
+    def pLog[T: Numeric: Trig](x: Vector[T], mean: Vector[T], cov: Vector[Vector[T]]): T = {
+        val trig = summon[Trig[T]]
+        Stuff.logMultivariateGaussianPdf(x, mean, cov)
+    }
 
     // target distribution from which we want to sample
     def p[T: Numeric: Trig](x: Vector[T], mean: Vector[T], cov: Vector[Vector[T]]): T = {
         val trig = summon[Trig[T]]
-        Stuff.logMultivariateGaussianPdf(x, mean, cov)
-        // trig.log(Stuff.multivariateGaussianPdf(x, mean, cov))
+        Stuff.multivariateGaussianPdf(x, mean, cov)
     }
 
     val stepSize = 1.0
     val initialSample = Vector(0.0, 0.0)
 
     val mean = Vector(3.0, 1.0)
-    val covariance = Vector(Vector(50.0, 45.0), Vector(45.0, 50.0))
+    val covariance = Vector(
+        Vector(500.0, 450.0), 
+        Vector(450.0, 500.0)
+    )
     
     def pDouble(x: Vector[Double]): Double = p[Double](x, mean, covariance)
+    def pLogDouble(x: Vector[Double]): Double = pLog[Double](x, mean, covariance)
 
     val meanDN = mean.map(DualNumber(_, 0.0))
     val covarianceDN = covariance.map(_.map(DualNumber(_, 0.0)))
     
     def pDualNumber(x: Vector[DualNumber[Double]]): DualNumber[Double] = p[DualNumber[Double]](x, meanDN, covarianceDN)
+    def pLogDualNumber(x: Vector[DualNumber[Double]]): DualNumber[Double] = pLog[DualNumber[Double]](x, meanDN, covarianceDN)
+
+    val (target, dTarget) = (UnnormalizedDistribution(pDouble), ScalaGrad.derive(pDualNumber))
+    // val (target, dTarget) = (UnnormalizedLogDistribution(pLogDouble), ScalaGrad.derive(pLogDualNumber))
 
     // TODO is here really log?
     lazy val metro =
@@ -67,19 +80,21 @@ object MHSampling extends App {
             stepSize, 
         )
     lazy val metroSamples = metro
-            .apply(UnnormalizedLogDistribution(pDouble), initialSample)
+            // .apply(UnnormalizedDistribution(pDouble), initialSample)
+            .apply(target, initialSample)
             .drop(numWarmup)
             .take(numSamples).toSeq
 
     lazy val mala = 
         MetropolisAdjustedLangevinAlgorithmSampler(
             new Random(),
-            ScalaGrad.derive(pDualNumber),
+            dTarget,
             stepSize,
             sigma = 1.0
         )
     lazy val malaSamples = mala
-            .apply(UnnormalizedLogDistribution(pDouble), initialSample)
+            // .apply(UnnormalizedDistribution(pDouble), initialSample)
+            .apply(target, initialSample)
             .drop(numWarmup)
             .take(numSamples).toSeq
 
