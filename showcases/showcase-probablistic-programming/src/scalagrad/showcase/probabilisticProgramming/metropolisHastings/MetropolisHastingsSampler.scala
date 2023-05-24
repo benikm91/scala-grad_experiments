@@ -17,5 +17,5 @@ trait MetropolisHastingsSampler extends MetropolisSampler:
                 exp(pp + gg)
             case target: UnnormalizedDistribution[Sample] =>    
                 val pp = target(proposedSample) / target(currentSample)
-                val gg = pcd.g(currentSample, proposedSample) - pcd.g(proposedSample, currentSample)
+                val gg = pcd.g(currentSample, proposedSample) / pcd.g(proposedSample, currentSample)
                 pp * gg        
