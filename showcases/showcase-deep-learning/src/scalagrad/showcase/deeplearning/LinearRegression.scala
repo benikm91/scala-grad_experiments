@@ -21,15 +21,15 @@ import scalagrad.showcase.deeplearning.Util.*
         }.sum / ys.size / 2
 
     def dLoss(xs: Vector[Vector[Double]], ys: Vector[Double], w0: Double, ws: Vector[Double]): (Double, Vector[Double]) =
-        val dw0 = xs.zip(ys).map { case (x, y) => y - predict(x, w0, ws) }.sum / xs.size
-        val dws = ws.zipWithIndex.map { case (w, i) => w - xs.zip(ys).map { case (x, y) => (y - predict(x, w0, ws)) * x(i) }.sum / xs.size }
-        (dw0, dws)
+        val dW0 = xs.zip(ys).map { case (x, y) => y - predict(x, w0, ws) }.sum / ys.size
+        val dWs = ws.zipWithIndex.map { case (w, i) => xs.zip(ys).map { case (x, y) => (predict(x, w0, ws) - y) * x(i) }.sum / ys.size }
+        (dW0, dWs)
 
     def gradientDescent(xs: Vector[Vector[Double]], ys: Vector[Double], w0: Double, ws: Vector[Double], alpha: Double, n: Int): (Double, Vector[Double]) =
         if n == 0 then (w0, ws)
         else
-            val (dw0, dws) = dLoss(xs, ys, w0, ws)
-            gradientDescent(xs, ys, w0 - alpha * dw0, ws.zip(dws).map { case (w, dw) => w - alpha * dw }, alpha, n - 1)
+            val (dW0, dWs) = dLoss(xs, ys, w0, ws)
+            gradientDescent(xs, ys, w0 - alpha * dW0, ws.zip(dWs).map { case (w, dW) => w - alpha * dW }, alpha, n - 1)
 
     val (initW0, initWs) = (0.0, Vector.fill(xs(0).size)(0.0))
     

@@ -56,7 +56,7 @@ import scalagrad.auto.forward.DeriverForwardPlan
     
     val initYsHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, initW0, initWs)), ys_mean, ys_std)
     println(f"${Math.sqrt(loss(ys, initYsHat))}g  -- RMSE with initial weights")
-    val gradientDescent = gradientDescentF(initW0, initWs, 0.01, 1000)
+    val gradientDescent = gradientDescentF(initW0, initWs, 0.01, 100)
     time {
         import scalagrad.auto.forward.dual.DualNumber
         import scalagrad.auto.forward.dual.DualNumber.given
