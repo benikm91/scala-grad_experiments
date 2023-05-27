@@ -46,6 +46,15 @@ lazy val scalaGradApi = (project in file("./scala-grad-api"))
     scalaTestSettings,
   )
   
+// ScalaGrad Tensor API
+lazy val scalaGradTensorApi = (project in file("./scala-grad-tensor-api"))
+  .dependsOn(scalaGradApi)
+  .settings(
+    name := "scala-grad-tensor-api",
+    basicSettings,
+    scalaTestSettings,
+  )
+
 // Numerical Differentitation
 lazy val scalaGradNumericalDifferentiation = (project in file("./scala-grad-numerical-differentiation"))
   .settings(
@@ -104,15 +113,16 @@ lazy val scalaGradAutoSpire = (project in file("./scala-grad-auto-spire"))
   )
   
 // Add derivers for breeze.linalg.Vector
-lazy val scalaGradBreezeVector = (project in file("./scala-grad-breeze-vector"))
+lazy val scalaGradAutoBreezeVector = (project in file("./scala-grad-auto-breeze-vector"))
   .settings(
-    name := "scala-grad-breeze-vector",
+    name := "scala-grad-auto-breeze-vector",
     basicSettings,
     scalaTestSettings,
     breezeDependency,
   ).dependsOn(
     scalaGradAutoForwardMode,
     scalaGradAutoReverseMode,
+    scalaGradTensorApi,
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
@@ -125,6 +135,7 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
     ).dependsOn(
       scalaGradAutoFractional,
       scalaGradAutoSpire,
+      scalaGradAutoBreezeVector,
     )
 
 // Show library usage
@@ -153,7 +164,7 @@ lazy val root = (project in file("."))
     // Implementations
     scalaGradAutoFractional,
     scalaGradAutoSpire,
-    scalaGradBreezeVector,
+    scalaGradAutoBreezeVector,
     // Showcases
     showcaseDeepLearning,
   )

@@ -28,8 +28,8 @@ import breeze.stats.meanAndVariance
 
 object UseCase1b extends App:
     val numWarmup = 5_000
-    val numSamples = 1_000
-    val numDataPoints = 1_000
+    val numSamples = 100
+    val numDataPoints = 500
     val a = Vector(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)  // coefficients for each feature
     val b = 2
     val sigma = 0.5
@@ -61,8 +61,6 @@ object UseCase1b extends App:
             if ((x - y).abs < 0.001) true else false
         }
         val num = summon[Numeric[T]]
-        // println(f"${mean.toDouble}, ${sigma.toDouble}")
-        // println(f"${res.toDouble} ~= ${Gaussian(mean.toDouble, sigma.toDouble).logPdf(x.toDouble)}")
         true || ~=(res.toDouble, Gaussian(mean.toDouble, sigma.toDouble).logPdf(x.toDouble))
     }
 
@@ -125,7 +123,7 @@ object UseCase1b extends App:
         MetropolisAdjustedLangevinAlgorithmSampler(
             new Random(),
             ScalaGrad.derive(logPosterior[DualNumber[Double]]),
-            stepSize = 1e-3 / numDataPoints, 
+            stepSize = 1e-2 / numDataPoints, 
             sigma = 1.0
         )
             .apply(UnnormalizedLogDistribution(logPosterior[Double]), initialSample)
@@ -169,22 +167,24 @@ object UseCase1b extends App:
             
         boxPlot.overlay(trueValues)
             .properties(
-                ChartProperties(title=s"$title $numSamples samples with $numWarmup warmup and $numDataPoints data points"),
+                ChartProperties(title=s"$title ${samples.size} samples with $numWarmup warmup and $numDataPoints data points"),
             )
             .show()
 
     println("Metro")
-    plotSamples( 
+    plotSamples(
         metroSamples.map(Parameters.fromVector(_)),
         title="Metro"
     )
     
     println("MALA")
-    plotSamples(
-        malaSamples.map(Parameters.fromVector(_)),
-        title="MALA"
-    )
-    
+    for (i <- malaSamples.size / 10 to malaSamples.size by malaSamples.size / 10) {
+        plotSamples(
+            malaSamples.take(i).map(Parameters.fromVector(_)),
+            title="MALA"
+        )
+    }
+
     println("DONE")
 
 

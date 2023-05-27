@@ -63,7 +63,7 @@ import breeze.numerics._
     println(f"${Math.sqrt(loss(DenseVector(ys.toArray), DenseVector(initYsHat.toArray)))}g  -- RMSE with initial weights")
 
     time {
-        val (w0, ws) = gradientDescent(xsSS, ysSS, initW0, initWs, 0.01, 100)
+        val (w0, ws) = gradientDescent(xsSS, ysSS, initW0, initWs, 0.01, 100_000)
         val ysHat = StandardScaler.inverseScaleColumn(predict(xsSS, w0, ws).toScalaVector, ys_mean, ys_std)
         println(f"${Math.sqrt(loss(DenseVector(ys.toArray), DenseVector(ysHat.toArray)))}g  -- RMSE with learned weights")
     }

@@ -36,7 +36,7 @@ import scalagrad.showcase.deeplearning.Util.*
     val initYsHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, initW0, initWs)), ys_mean, ys_std)
     println(f"${Math.sqrt(loss(ys, initYsHat))}g  -- RMSE with initial weights")
     time {
-        val (w0, ws) = gradientDescent(xs_ss, ys_ss, initW0, initWs, 0.01, 100)
+        val (w0, ws) = gradientDescent(xs_ss, ys_ss, initW0, initWs, 0.01, 100_000)
         val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(predict(_, w0, ws)), ys_mean, ys_std)
         println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
     }
