@@ -103,19 +103,6 @@ lazy val scalaGradAutoSpire = (project in file("./scala-grad-auto-spire"))
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
-// Add derivers for breeze.linalg.Vector
-lazy val scalaGradBreezeVector = (project in file("./scala-grad-breeze-vector"))
-  .settings(
-    name := "scala-grad-breeze-vector",
-    basicSettings,
-    scalaTestSettings,
-    breezeDependency,
-  ).dependsOn(
-    scalaGradAutoForwardMode,
-    scalaGradAutoReverseMode,
-    scalaGradNumericalDifferentiation % "test->compile;test->test",
-  )
-  
 // Show library usage
 lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-learning"))
   .settings(
