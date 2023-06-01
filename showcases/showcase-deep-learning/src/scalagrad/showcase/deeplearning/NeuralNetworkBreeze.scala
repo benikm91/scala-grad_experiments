@@ -87,7 +87,7 @@ import breeze.numerics._
     val rand = scala.util.Random(42)
     
     val nFeatures = xs_ss(0).size
-    val nHiddenUnits = 5
+    val nHiddenUnits = 6
     val initFirstW0 = DenseVector.fill(nHiddenUnits)(rand.nextDouble())
     val initFirstWs = DenseMatrix.fill(nFeatures, nHiddenUnits)(rand.nextDouble()).t
     val initLastW0 = rand.nextDouble()
@@ -107,7 +107,7 @@ import breeze.numerics._
     println(f"${Math.sqrt(loss(DenseVector(ys.toArray), DenseVector(initYsHat.toArray)))}g  -- RMSE with initial weights")
     
     time {
-        (1 to 100 by 1).foreach(_ => 
+        (1 to 1 by 1).foreach(_ => 
             time {
                 val (firstW0, firstWs, lastW0, lastWs) = gradientDescent(
                     xsSS, ysSS,
@@ -116,7 +116,7 @@ import breeze.numerics._
                     initLastW0,
                     initLastWs, 
                     0.01, 
-                    10000
+                    100_000
                 )
 
                 val ysHat = StandardScaler.inverseScaleColumn(

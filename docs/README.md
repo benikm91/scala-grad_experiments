@@ -43,3 +43,24 @@ def f1[T](x: T)(using f: Fractional[T]): T =
 val ddf = ScalaGrad.derive(ScalaGrad.derive(f1[DualNumber[DualDelta[Double]]]))
 println(ddf(5.0))
 ```
+
+### Vector Example
+
+```
+
+def relu[P](x: P)(using num: Numeric[P]) = 
+    if x <= num.zero then 
+        num.zero 
+    else 
+        x
+
+def sigmoid[P](x: P) = ???
+
+def f[LA <: LinearAlgebra](input: LA.Vector, w1: LA.Matrix, w2: LA.Vector)(using o: LinearAlgebraOps[LA]): LA.Scalar = 
+    val hIn = o.dot(input, w1)
+    val hOut = o.elementWise(hIn, relu)
+    val h2In = o.dot(w2, hOut)
+    val h2Out = sigmoid(h2In)
+    h2Out
+
+```

@@ -89,7 +89,7 @@ lazy val scalaGradAutoFractional = (project in file("./scala-grad-auto-fractiona
     scalaGradAutoReverseMode,
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
-  
+
 // Add derivers for spire.math.numeric
 lazy val scalaGradAutoSpire = (project in file("./scala-grad-auto-spire"))
   .settings(
@@ -140,7 +140,6 @@ lazy val root = (project in file("."))
     // Implementations
     scalaGradAutoFractional,
     scalaGradAutoSpire,
-    scalaGradBreezeVector,
     // Showcases
     showcaseDeepLearning,
   )

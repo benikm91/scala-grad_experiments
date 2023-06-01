@@ -13,7 +13,7 @@ import scalagrad.auto.forward.DeriverForwardPlan
 
 @main def neuralNetworkFractional() = 
 
-    val nHiddenUnits = 5
+    val nHiddenUnits = 6
 
     val fishs = FishDataSet.load
 
@@ -113,9 +113,9 @@ import scalagrad.auto.forward.DeriverForwardPlan
     val initYHat = xs.map(x => neuralNetwork(x, initFirstW0, initFirstWs, initLastW0, initLastWs))
     println(f"${Math.sqrt(loss(ys, initYHat))}g  -- RMSE with initial weights")
     
-    val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10000) _
+    val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10_000) _
 
-    time {
+    /*time {
         import scalagrad.auto.forward.dual.DualNumber
         import scalagrad.auto.forward.dual.DualNumber.given
         import scalagrad.auto.forward.DeriverForwardPlan.given
@@ -128,7 +128,7 @@ import scalagrad.auto.forward.DeriverForwardPlan
         val (initFirstW0, initFirstWs, lastW0, lastWs) = gradientDescent(dLoss)
         val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(neuralNetwork(_, initFirstW0, initFirstWs, lastW0, lastWs)), ys_mean, ys_std)
         println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")
-    }
+    }*/
 
     time {
         import scalagrad.auto.reverse.dual.DualDelta
