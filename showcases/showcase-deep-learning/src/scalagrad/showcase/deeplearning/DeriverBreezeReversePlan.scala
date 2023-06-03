@@ -2,8 +2,6 @@ package scalagrad.showcase.deeplearning
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
-import scalagrad.api.VectorAlgebraFor
-import scalagrad.api.VectorAlgebraOps
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.auto.reverse.dual.DualDelta
@@ -29,7 +27,7 @@ object DeriverBreezeReversePlan:
             xs => {
                 val keyXs = 0 until xs.length
                 def toDelta(xs: DenseVector[Double]): DeltaScalar[Double] = 
-                    val dual = DualColumnVector(xs, DeltaColumnVector.Val(0))
+                    val dual = DualDeltaColumnVector(xs, DeltaColumnVector.Val(0))
                     val res = f(dual)
                     res.delta
                 val delta = toDelta(xs)
@@ -62,10 +60,10 @@ object DeriverBreezeReversePlan:
         override def derive(f: fT): dfT = 
             (v1, m, s, v2) => {
                 val delta = f(
-                    DualColumnVector(v1, DeltaColumnVector.Val(0)),
-                    DualMatrix(m, DeltaMatrix.Val(0)),
-                    DualScalar(s, DeltaScalar.Val(0)),
-                    DualColumnVector(v2, DeltaColumnVector.Val(1))
+                    DualDeltaColumnVector(v1, DeltaColumnVector.Val(0)),
+                    DualDeltaMatrix(m, DeltaMatrix.Val(0)),
+                    DualDeltaScalar(s, DeltaScalar.Val(0)),
+                    DualDeltaColumnVector(v2, DeltaColumnVector.Val(1))
                 ).delta
                 val result = Eval.evalScalar(1.0, delta, Eval.AccumulatedResult.empty[Double])
                 (result.columnVectors(0), result.matrices(0), result.scalars(0), result.columnVectors(1))

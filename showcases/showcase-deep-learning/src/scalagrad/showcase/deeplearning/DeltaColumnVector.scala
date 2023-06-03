@@ -2,8 +2,6 @@ package scalagrad.showcase.deeplearning
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
-import scalagrad.api.VectorAlgebraFor
-import scalagrad.api.VectorAlgebraOps
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.auto.reverse.dual.DualDelta

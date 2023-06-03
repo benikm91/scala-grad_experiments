@@ -2,8 +2,6 @@ package scalagrad.showcase.deeplearning
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
-import scalagrad.api.VectorAlgebraFor
-import scalagrad.api.VectorAlgebraOps
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.auto.reverse.dual.DualDelta
@@ -17,4 +15,6 @@ import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
 
-case class DualMatrix[P: Fractional](val value: DenseMatrix[P], val delta: DeltaMatrix[P])
+case class DualDeltaColumnVector[P: Fractional](val value: DenseVector[P], val delta: DeltaColumnVector[P]) extends DualColumnVector[P, DeltaColumnVector[P]]:
+    def v = value
+    def dv = delta

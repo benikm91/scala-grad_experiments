@@ -57,8 +57,8 @@ object MHSampling extends App {
 
     val mean = Vector(3.0, 1.0)
     val covariance = Vector(
-        Vector(500.0, 450.0), 
-        Vector(450.0, 500.0)
+        Vector(50.0, 45.0), 
+        Vector(45.0, 50.0)
     )
     
     def pDouble(x: Vector[Double]): Double = p[Double](x, mean, covariance)
@@ -70,8 +70,8 @@ object MHSampling extends App {
     def pDualNumber(x: Vector[DualNumber[Double]]): DualNumber[Double] = p[DualNumber[Double]](x, meanDN, covarianceDN)
     def pLogDualNumber(x: Vector[DualNumber[Double]]): DualNumber[Double] = pLog[DualNumber[Double]](x, meanDN, covarianceDN)
 
-    val (target, dTarget) = (UnnormalizedDistribution(pDouble), ScalaGrad.derive(pDualNumber))
-    // val (target, dTarget) = (UnnormalizedLogDistribution(pLogDouble), ScalaGrad.derive(pLogDualNumber))
+    // val (target, dTarget) = (UnnormalizedDistribution(pDouble), ScalaGrad.derive(pDualNumber))
+    val (target, dTarget) = (UnnormalizedLogDistribution(pLogDouble), ScalaGrad.derive(pLogDualNumber))
 
     // TODO is here really log?
     lazy val metro =
@@ -80,7 +80,6 @@ object MHSampling extends App {
             stepSize, 
         )
     lazy val metroSamples = metro
-            // .apply(UnnormalizedDistribution(pDouble), initialSample)
             .apply(target, initialSample)
             .drop(numWarmup)
             .take(numSamples).toSeq
@@ -93,7 +92,6 @@ object MHSampling extends App {
             sigma = 1.0
         )
     lazy val malaSamples = mala
-            // .apply(UnnormalizedDistribution(pDouble), initialSample)
             .apply(target, initialSample)
             .drop(numWarmup)
             .take(numSamples).toSeq

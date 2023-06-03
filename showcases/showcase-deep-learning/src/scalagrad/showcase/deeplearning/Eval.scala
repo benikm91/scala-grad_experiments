@@ -2,8 +2,6 @@ package scalagrad.showcase.deeplearning
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
-import scalagrad.api.VectorAlgebraFor
-import scalagrad.api.VectorAlgebraOps
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.auto.reverse.dual.DualDelta
@@ -29,6 +27,8 @@ object Eval:
                         ))
                 )
             case DeltaScalar.MultiplyVV(m1: DeltaRowVector[Double], m2: DeltaColumnVector[Double]) => ???
+            case DeltaScalar.MultiplyRVDCV(v: Transpose[DenseVector[Double]], d: DeltaColumnVector[Double]) => 
+                evalColumnVector(output * v.t, d, input)
             case DeltaScalar.Add(d1: DeltaScalar[Double], d2: DeltaScalar[Double]) =>
                 evalScalar(output, d1, 
                     evalScalar(output, d2, input)
@@ -116,11 +116,11 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
-            case DeltaMatrix.AddMM(m1, m2) =>
+            case DeltaMatrix.AddDMDM(m1, m2) =>
                 evalMatrix(output, m1, 
                     evalMatrix(output, m2, input)
                 )
-            case DeltaMatrix.AddMV(m, v) =>
+            case DeltaMatrix.AddDMDCV(m, v) =>
                 evalMatrix(output, m, 
                     output(*, ::).foldLeft(input)((input, outputVector) => 
                         evalColumnVector(outputVector, v, input)
@@ -128,15 +128,15 @@ object Eval:
                 )
             case DeltaMatrix.Transpose(d) =>
                 evalMatrix(output.t, d, input)
-            case DeltaMatrix.MatrixDot(m, d) => 
+            case DeltaMatrix.MatrixDotMDM(m, d) => 
                 evalMatrix(m.t * output, d, input)
-            case DeltaMatrix.MatrixDot3(d, v) =>
+            case DeltaMatrix.MatrixDotDCVRV(d, v) =>
                 evalColumnVector(output * v.t, d, input)
-            case DeltaMatrix.MatrixDot4(v, d) =>
+            case DeltaMatrix.MatrixDotCVDRV(v, d) =>
                 evalRowVector(v.t * output, d, input)
             case DeltaMatrix.ElementWiseScale(v, d) =>
                 evalMatrix(output *:* v, d, input)
-            case DeltaMatrix.MatrixDot2(d, m) =>
+            case DeltaMatrix.MatrixDotDMM(d, m) =>
                 evalMatrix(output * m.t, d, input)
 
     case class AccumulatedResult[P](

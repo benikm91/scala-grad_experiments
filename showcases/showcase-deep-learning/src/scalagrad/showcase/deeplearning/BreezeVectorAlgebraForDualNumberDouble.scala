@@ -2,8 +2,7 @@ package scalagrad.showcase.deeplearning
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
-import scalagrad.api.VectorAlgebraFor
-import scalagrad.api.VectorAlgebraOps
+import scalagrad.api.linearalgebra.LinearAlgebraOps
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.auto.reverse.dual.DualDelta
@@ -17,91 +16,97 @@ import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
 
-object BreezeVectorAlgebraForDualNumberDouble extends VectorAlgebraOps:
+case class DualNumberScalar[T](value: T, derivative: T) extends DualScalar[T, T]:
+    def v = value
+    def dv = derivative
+
+case class DualNumberColumnVector[T](value: DenseVector[T], derivative: DenseVector[T]) extends DualColumnVector[T, DenseVector[T]]:
+    def v = value
+    def dv = derivative
+
+case class DualNumberRowVector[T](value: Transpose[DenseVector[T]], derivative: Transpose[DenseVector[T]]) extends DualRowVector[T, Transpose[DenseVector[T]]]:
+    def v = value
+    def dv = derivative
+
+case class DualNumberMatrix[T](value: DenseMatrix[T], derivative: DenseMatrix[T]) extends DualMatrix[T, DenseMatrix[T]]:
+    def v = value
+    def dv = derivative
+
+object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDualDouble:
+
+    override type ScalarD = Double
+    override type ColumnVectorD = DenseVector[Double]
+    override type RowVectorD = Transpose[DenseVector[Double]]
+    override type MatrixD = DenseMatrix[Double]
+
+    override type Scalar = DualNumberScalar[Double]
+    override type ColumnVector = DualNumberColumnVector[Double]
+    override type RowVector = DualNumberRowVector[Double]
+    override type Matrix = DualNumberMatrix[Double]
+
+    override def createScalar(value: Double, dual: ScalarD): Scalar = 
+        DualNumberScalar(value, dual)
+
+    override def createColumnVector(value: DenseVector[Double], dual: ColumnVectorD): ColumnVector = 
+        DualNumberColumnVector(value, dual)
+
+    override def createRowVector(value: Transpose[DenseVector[Double]], dual: RowVectorD): RowVector = 
+        DualNumberRowVector(value, dual)
+
+    override def createMatrix(value: DenseMatrix[Double], dual: MatrixD): Matrix =
+        DualNumberMatrix(value, dual)
     
-    override type Scalar = DualNumber[Double]
-    override type ColumnVector = (DenseVector[Double], DenseVector[Double])
-    override type RowVector = (Transpose[DenseVector[Double]], Transpose[DenseVector[Double]])
-    override type Matrix = (DenseMatrix[Double], DenseMatrix[Double])
+    override def zeroD: ScalarD = 0.0
+    
+    override def dTranspose(m: MatrixD): MatrixD = m.t
+    override def dTransposeColumVector(v: ColumnVectorD): RowVectorD = v.t
+    override def dTransposeRowVector(v: RowVectorD): ColumnVectorD = v.t
+    override def timesDMM(dm: MatrixD, m: DenseMatrix[Double]): MatrixD = dm * m
+    override def timesMDM(m: DenseMatrix[Double], dm: MatrixD): MatrixD = m * dm
+    override def addDMDM(dm1: MatrixD, dm2: MatrixD): MatrixD = dm1 + dm2
+    override def timesDMCV(dm: MatrixD, v: DenseVector[Double]): ColumnVectorD = dm * v
+    override def timesMDCV(m: DenseMatrix[Double], dv: ColumnVectorD): ColumnVectorD = m * dv
+    override def addDCVDCV(dm1: ColumnVectorD, dm2: ColumnVectorD): ColumnVectorD = dm1 + dm2
+    override def timesDMS(dm: MatrixD, s: Double): MatrixD = dm * s
+    override def timesMDS(m: DenseMatrix[Double], ds: ScalarD): MatrixD = m * ds
+    override def timesDCVRV(dv: ColumnVectorD, v: Transpose[DenseVector[Double]]): MatrixD = dv * v
+    override def timesCVDRV(v: DenseVector[Double], dv: RowVectorD): MatrixD = v * dv
+    override def timesDCVS(dv: ColumnVectorD, s: Double): ColumnVectorD = dv * s
+    override def timesCVDS(v: DenseVector[Double], ds: ScalarD): ColumnVectorD = v * ds
+    override def addDRVDRV(dv1: RowVectorD, dv2: RowVectorD): RowVectorD = dv1 + dv2
+    override def timesDRVM(dv: RowVectorD, m: DenseMatrix[Double]): RowVectorD = dv * m
+    override def timesRDMV(v: Transpose[DenseVector[Double]], dv: MatrixD): RowVectorD = v * dv
+    override def addDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD = ds1 + ds2
+    override def timesDRVCV(dv: RowVectorD, v: DenseVector[Double]): ScalarD = dv * v
+    override def timesRVDCV(v: Transpose[DenseVector[Double]], dv: ColumnVectorD): ScalarD = v * dv
+    override def timesDRVS(dv: RowVectorD, s: Double): RowVectorD = dv * s
+    override def timesRVDS(v: Transpose[DenseVector[Double]], ds: ScalarD): RowVectorD = v * ds
+    override def timesSDS(s: Double, ds: ScalarD): ScalarD = s * ds
+    override def addDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = dm(breeze.linalg.*, ::) + dv
+    override def addDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = dm(::, breeze.linalg.*) + dv.t
+    override def addDMDS(dm: MatrixD, ds: ScalarD): MatrixD = dm + ds
+    override def addDCVDS(dv: ColumnVectorD, ds: ScalarD): ColumnVectorD = dv + ds
+    override def addDRVDS(dv: RowVectorD, ds: ScalarD): RowVectorD = dv + ds
+    override def subDMDM(dm1: MatrixD, dm2: MatrixD): MatrixD = dm1 - dm2
+    override def subDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = dm(breeze.linalg.*, ::) - dv
+    override def subDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = dm(::, breeze.linalg.*) - dv.t
+    override def subDMDS(dm: MatrixD, ds: ScalarD): MatrixD = dm - ds
+    override def subDCVDCV(dv1: ColumnVectorD, dv2: ColumnVectorD): ColumnVectorD = dv1 - dv2
+    override def subDCVDS(dv: ColumnVectorD, ds: ScalarD): ColumnVectorD = dv - ds
+    override def subDRVDRV(dv1: RowVectorD, dv2: RowVectorD): RowVectorD = dv1 - dv2
+    override def subDRVDS(dv: RowVectorD, ds: ScalarD): RowVectorD = dv - ds
+    override def subDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD = ds1 - ds2
+    override def divideDMS(dm: MatrixD, s: Double): MatrixD = dm / s
+    override def divideDCVS(dv: ColumnVectorD, s: Double): ColumnVectorD = dv / s
+    override def divideDRVS(dv: RowVectorD, s: Double): RowVectorD = dv / s
+    override def divideDSS(ds: ScalarD, s: Double): ScalarD = ds / s
+    override def sumDCV(dv: ColumnVectorD, vLength: Int): ScalarD = breeze.linalg.sum(dv)
+    override def timesElementWiseMDM(m1: DenseMatrix[Double], dm2: MatrixD): MatrixD = m1 *:* dm2
+    override def timesElementWiseCVDCV(v1: DenseVector[Double], dv2: ColumnVectorD): ColumnVectorD = v1 *:* dv2
+    override def timesElementWiseRVDRV(v1: Transpose[DenseVector[Double]], dv2: RowVectorD): RowVectorD = v1 *:* dv2
 
-    def liftToScalar(d: Int): Scalar = DualNumber(d.toDouble, 0.0)
-
-    override def transpose(m: Matrix): Matrix = (m._1.t, m._2.t)
-    override def transposeColumVector(v: ColumnVector): RowVector = (v._1.t, v._2.t)
-    override def transposeRowVector(v: RowVector): ColumnVector = (v._1.t, v._2.t)
-
-    override def timesMM(m1: Matrix, m2: Matrix): Matrix =
-        // derivative of dot product
-        def dTimes(m: DenseMatrix[Double], dm: DenseMatrix[Double], m2: DenseMatrix[Double], dm2: DenseMatrix[Double]): DenseMatrix[Double] =
-            dm * m2 + m * dm2
-        (m1._1 * m2._1, dTimes(m1._1, m1._2, m2._1, m2._2))
-    override def timesVV(v1: RowVector, v2: ColumnVector): Scalar = 
-        def dTimes(v1: Transpose[DenseVector[Double]], dv1: Transpose[DenseVector[Double]], v2: DenseVector[Double], dv2: DenseVector[Double]): Double =
-            dv1 * v2 + v1 * dv2
-        DualNumber(v1._1 * v2._1, dTimes(v1._1, v1._2, v2._1, v2._2))
-    override def timesOuterVV(v1: ColumnVector, v2: RowVector): Matrix = 
-        def dTimes(v1: DenseVector[Double], dv1: DenseVector[Double], v2: Transpose[DenseVector[Double]], dv2: Transpose[DenseVector[Double]]): DenseMatrix[Double] =
-            dv1 * v2 + v1 * dv2
-        (v1._1 * v2._1, dTimes(v1._1, v1._2, v2._1, v2._2))
-    override def timesVM(v: RowVector, m: Matrix): RowVector = 
-        def dTimes(v1: Transpose[DenseVector[Double]], dv1: Transpose[DenseVector[Double]], v2: DenseMatrix[Double], dv2: DenseMatrix[Double]): Transpose[DenseVector[Double]] =
-            dv1 * v2.t + v1 * dv2.t
-        (v._1 * m._1, dTimes(v._1, v._2, m._1, m._2))
-    override def timesMV(m: Matrix, v: ColumnVector): ColumnVector =
-        def dTimes(v1: DenseMatrix[Double], dv1: DenseMatrix[Double], v2: DenseVector[Double], dv2: DenseVector[Double]): DenseVector[Double] =
-            dv1 * v2 + v1 * dv2
-        (m._1 * v._1, dTimes(m._1, m._2, v._1, v._2))
-    override def timesVS(v: ColumnVector, s: Scalar): ColumnVector =
-        (v._1 * s.value, v._2 * s.derivative)
-    override def timesMS(m: Matrix, s: Scalar): Matrix = 
-        (m._1 * s.value, m._2 * s.derivative)
-
-    override def timesSS(s1: Scalar, s2: Scalar): Scalar =
-        def dTimes(s1: Double, ds1: Double, s2: Double, ds2: Double): Double =
-            ds1 * s2 + s1 * ds2
-        DualNumber(s1.value * s2.value, dTimes(s1.value, s1.derivative, s2.value, s2.derivative))
-
-    override def plusMM(m1: Matrix, m2: Matrix): Matrix =
-        (m1._1 + m2._1, m1._2 + m2._2)
-    override def plusVV(v1: ColumnVector, v2: ColumnVector): ColumnVector =
-        (v1._1 + v2._1, v1._2 + v2._2)
-    override def plusMV(m: Matrix, v: ColumnVector): Matrix =
-        (m._1(breeze.linalg.*, ::) + v._1, m._2(breeze.linalg.*, ::) + v._2)
-    override def plusVS(v: ColumnVector, s: Scalar): ColumnVector =
-        (v._1 + s.value, v._2 + s.derivative)
-    override def plusMS(m: Matrix, s: Scalar): Matrix = 
-        (m._1 + s.value, m._2 + s.derivative)
-    override def plusSS(s1: Scalar, s2: Scalar): Scalar =
-        DualNumber(s1.value + s2.value, s1.derivative + s2.derivative)
-    override def minusMM(m1: Matrix, m2: Matrix): Matrix =
-        (m1._1 - m2._1, m1._2 - m2._2)
-    override def minusVV(v1: ColumnVector, v2: ColumnVector): ColumnVector =
-        (v1._1 - v2._1, v1._2 - v2._2)
-    override def minusMV(m: Matrix, v: ColumnVector): Matrix = ???
-    override def minusVM(v: ColumnVector, m: Matrix): Matrix = ???
-    override def minusVS(v: ColumnVector, s: Scalar): ColumnVector =
-        (v._1 - s.value, v._2 - s.derivative)
-    override def minusMS(m: Matrix, s: Scalar): Matrix =
-        (m._1 - s.value, m._2 - s.derivative)
-    override def minusSS(s1: Scalar, s2: Scalar): Scalar =
-        DualNumber(s1.value - s2.value, s1.derivative - s2.derivative)
-
-    override def elementWiseOps(v: ColumnVector, f: [T] => T => Numeric[T] ?=> T): ColumnVector = 
-        import scalagrad.auto.forward.DeriverForwardPlan.given
-        val df = ScalaGrad.derive(f[DualNumber[Double]])
-        (v._1.map(f[Double]), v._1.map(df) *:* v._2)
-
-    override def elementWiseOpsM(v: Matrix, f: [T] => (x: T) => (Numeric[T]) ?=> T): Matrix =
-        import scalagrad.auto.forward.DeriverForwardPlan.given
-        val df = ScalaGrad.derive(f[DualNumber[Double]])
-        (v._1.map(f[Double]), v._1.map(df) *:* v._2)
-
-    override def length(v: ColumnVector): Int = v._1.length
-
-    override def divideSS(s1: Scalar, s2: Scalar): Scalar = 
-        def dDivide(u: Double, du: Double, v: Double, dv: Double): Double =
-            (du * v - u * dv) / (v * v)
-        DualNumber(s1.value / s2.value, dDivide(s1._1, s1._2, s2._1, s2._2))
-
-    override def sum(v: ColumnVector): Scalar =
-        DualNumber(breeze.linalg.sum(v._1), breeze.linalg.sum(v._2))
+    override def reduceCV(v: ColumnVector)(f: [T] => (T, T) => Numeric[T] ?=> T): Scalar =
+        val xx = v.v.toScalaVector.zip(v.dv.toScalaVector)
+            .map(DualNumber(_, _))
+            .reduce(f[DualNumber[Double]])
+        DualNumberScalar(xx.v, xx.dv)

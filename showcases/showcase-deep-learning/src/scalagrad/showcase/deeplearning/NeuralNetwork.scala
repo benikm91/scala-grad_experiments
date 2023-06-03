@@ -114,7 +114,7 @@ import scalagrad.showcase.deeplearning.Util.*
                     initFirstW0, initFirstWs, 
                     initLastW0, initLastWs, 
                     0.01, 
-                    10000
+                    10_000
                 )
                 val ysHat = StandardScaler.inverseScaleColumn(xs_ss.map(x => neuralNetwork(x, firstW0, firstWs, lastW0, lastWs)), ys_mean, ys_std)
                 println(f"${Math.sqrt(loss(ys, ysHat))}g  -- RMSE with learned weights")

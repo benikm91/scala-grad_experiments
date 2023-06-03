@@ -1,5 +1,6 @@
 package scalagrad.showcase.deeplearning
 
+/*
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
 import scalagrad.api.VectorAlgebraFor
@@ -72,3 +73,4 @@ def test() =
         val df = ScalaGrad.derive(f)
         println(df(DenseVector(1.0, 2.0)))
     }
+*/

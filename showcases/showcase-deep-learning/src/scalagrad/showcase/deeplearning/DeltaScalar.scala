@@ -2,8 +2,6 @@ package scalagrad.showcase.deeplearning
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
-import scalagrad.api.VectorAlgebraFor
-import scalagrad.api.VectorAlgebraOps
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.fractional.auto.dual.DualIsFractional.given
 import scalagrad.auto.reverse.dual.DualDelta
@@ -21,6 +19,7 @@ enum DeltaScalar[P]:
     case Zero(x: P) // TODO how to get ride of x here?
     case Val(id: Int)
     case MultiplyVV(m1: DeltaRowVector[P], m2: DeltaColumnVector[P])
+    case MultiplyRVDCV(v: Transpose[DenseVector[Double]], d: DeltaColumnVector[P])
     case ColumnDotProduct(v: Transpose[DenseVector[Double]], d: DeltaColumnVector[P])
     case RowDotProduct(d: DeltaRowVector[P], v: DenseVector[Double])
     case Add(s1: DeltaScalar[P], s2: DeltaScalar[P])
