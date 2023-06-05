@@ -1,4 +1,4 @@
-package scalagrad.showcase.deeplearning
+package scalagrad.linearalgebra.auto.forward
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
@@ -15,22 +15,8 @@ import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
-
-case class DualNumberScalar[T](value: T, derivative: T) extends DualScalar[T, T]:
-    def v = value
-    def dv = derivative
-
-case class DualNumberColumnVector[T](value: DenseVector[T], derivative: DenseVector[T]) extends DualColumnVector[T, DenseVector[T]]:
-    def v = value
-    def dv = derivative
-
-case class DualNumberRowVector[T](value: Transpose[DenseVector[T]], derivative: Transpose[DenseVector[T]]) extends DualRowVector[T, Transpose[DenseVector[T]]]:
-    def v = value
-    def dv = derivative
-
-case class DualNumberMatrix[T](value: DenseMatrix[T], derivative: DenseMatrix[T]) extends DualMatrix[T, DenseMatrix[T]]:
-    def v = value
-    def dv = derivative
+import scalagrad.linearalgebra.api.BreezeVectorAlgebraForDualDouble
+import scalagrad.linearalgebra.auto.forward.dual.*
 
 object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDualDouble:
 

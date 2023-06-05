@@ -4,6 +4,15 @@ import scala.io.Source
 import scalagrad.showcase.deeplearning.Util.*
 import scalagrad.api.linearalgebra.LinearAlgebraOps
 import scalagrad.api.ScalaGrad
+import scalagrad.linearalgebra.api.BreezeVectorAlgebraForDouble
+import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan
+import scalagrad.linearalgebra.auto.forward.BreezeVectorAlgebraForDualNumberDouble
+import scalagrad.linearalgebra.auto.forward.dual.{DualNumberMatrix, DualNumberColumnVector, DualNumberRowVector, DualNumberScalar}
+import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan
+import scalagrad.linearalgebra.auto.reverse.BreezeVectorAlgebraForDualDeltaDouble
+import scalagrad.linearalgebra.auto.reverse.dual.{DualDeltaMatrix, DualDeltaColumnVector, DualDeltaRowVector, DualDeltaScalar}
+import scalagrad.linearalgebra.auto.reverse.delta.{DeltaMatrix, DeltaColumnVector, DeltaRowVector, DeltaScalar}
+import breeze.linalg.{DenseMatrix, DenseVector}
 
 @main def neuralNetworkVectorAlg() = 
 

@@ -103,6 +103,28 @@ lazy val scalaGradAutoSpire = (project in file("./scala-grad-auto-spire"))
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
+// ScalaGrad Linear Algebra API
+lazy val scalaGradLinearAlgebraApi = (project in file("./scala-grad-linear-algebra-api"))
+  .settings(
+    name := "scala-grad-linear-algebra-api",
+    basicSettings,
+    breezeDependency,
+  ).dependsOn(
+    scalaGradApi,
+    scalaGradAutoFractional,
+    scalaGradAutoSpire,
+  )
+  
+// ScalaGrad Linear Algebra Breeze 
+lazy val scalaGradLinearAlgebraAutoBreeze = (project in file("./scala-grad-linear-algebra-auto-breeze"))
+  .settings(
+    name := "scala-grad-linear-algebra-auto-breeze",
+    basicSettings,
+    scalaTestSettings,
+  ).dependsOn(
+    scalaGradLinearAlgebraApi,
+  )
+
 // Show library usage
 lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-learning"))
   .settings(
@@ -112,6 +134,8 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
     ).dependsOn(
       scalaGradAutoFractional,
       scalaGradAutoSpire,
+      scalaGradLinearAlgebraApi,
+      scalaGradLinearAlgebraAutoBreeze
     )
 
 // Show library usage

@@ -1,4 +1,4 @@
-package scalagrad.showcase.deeplearning
+package scalagrad.linearalgebra.api
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
@@ -15,22 +15,7 @@ import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
-
-trait DualScalar[P, D]:
-    def v: P
-    def dv: D
-
-trait DualColumnVector[P, D]:
-    def v: DenseVector[P]
-    def dv: D
-
-trait DualRowVector[P, D]:
-    def v: Transpose[DenseVector[P]]
-    def dv: D
-
-trait DualMatrix[P, D]:
-    def v: DenseMatrix[P]
-    def dv: D
+import scalagrad.linearalgebra.api.dual.* 
 
 trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     

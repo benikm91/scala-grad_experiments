@@ -1,4 +1,4 @@
-package scalagrad.showcase.deeplearning
+package scalagrad.linearalgebra.auto.reverse.eval
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
@@ -14,6 +14,8 @@ import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
+import scalagrad.linearalgebra.auto.reverse.delta.*
+import scalagrad.linearalgebra.auto.reverse.dual.*
 
 object Eval:
     def evalScalar(output: Double, delta: DeltaScalar[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] =

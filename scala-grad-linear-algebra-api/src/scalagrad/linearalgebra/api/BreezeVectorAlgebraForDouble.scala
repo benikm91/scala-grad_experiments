@@ -1,4 +1,4 @@
-package scalagrad.showcase.deeplearning
+package scalagrad.linearalgebra.api
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual

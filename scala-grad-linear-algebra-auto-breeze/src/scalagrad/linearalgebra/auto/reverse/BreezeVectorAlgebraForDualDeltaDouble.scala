@@ -1,4 +1,4 @@
-package scalagrad.showcase.deeplearning
+package scalagrad.linearalgebra.auto.reverse
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
@@ -15,6 +15,9 @@ import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
+import scalagrad.linearalgebra.api.BreezeVectorAlgebraForDualDouble
+import scalagrad.linearalgebra.auto.reverse.dual.*
+import scalagrad.linearalgebra.auto.reverse.delta.*
 
 object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualDouble:
 

@@ -1,4 +1,4 @@
-package scalagrad.showcase.deeplearning
+package scalagrad.linearalgebra.auto.forward
 
 import scalagrad.api.ScalaGrad
 import scalagrad.api.Dual
@@ -14,6 +14,8 @@ import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
+import scalagrad.linearalgebra.auto.forward.BreezeVectorAlgebraForDualNumberDouble
+import scalagrad.linearalgebra.auto.forward.dual.*
 
 object DeriverBreezeForwardPlan:
 
@@ -70,7 +72,7 @@ object DeriverBreezeForwardPlan:
                     res
                 val v1Dummy = DualNumberColumnVector(v1, DenseVector.zeros[Double](v1.length))
                 val mDummy = DualNumberMatrix(m, DenseMatrix.zeros[Double](m.rows, m.cols))
-                val sDummy = DualNumberScalar(s, 0.0) 
+                val sDummy = DualNumberScalar(s, 0.0)
                 val v2Dummy = DualNumberColumnVector(v2, DenseVector.zeros[Double](v2.length))
 
                 val v1Res =
