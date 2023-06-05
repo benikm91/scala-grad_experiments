@@ -10,7 +10,7 @@ import scalagrad.linearalgebra.auto.forward.BreezeVectorAlgebraForDualNumberDoub
 import scalagrad.linearalgebra.auto.forward.dual.{DualNumberMatrix, DualNumberColumnVector, DualNumberRowVector, DualNumberScalar}
 import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan
 import scalagrad.linearalgebra.auto.reverse.BreezeVectorAlgebraForDualDeltaDouble
-import scalagrad.linearalgebra.auto.reverse.dual.{DualDeltaMatrix, DualDeltaColumnVector, DualDeltaRowVector, DualDeltaScalar}
+import scalagrad.linearalgebra.auto.reverse.dual.{DeltaMonad, DualDeltaMatrix, DualDeltaColumnVector, DualDeltaRowVector, DualDeltaScalar}
 import scalagrad.linearalgebra.auto.reverse.delta.{DeltaMatrix, DeltaColumnVector, DeltaRowVector, DeltaScalar}
 import breeze.linalg.{DenseMatrix, DenseVector}
 
@@ -117,10 +117,10 @@ import breeze.linalg.{DenseMatrix, DenseVector}
     ))
 
     val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
-        initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 100
+        initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 100_000
     )
     
-    time {
+    /*time {
         import DeriverBreezeForwardPlan.given
         val dLoss = ScalaGrad.derive(lossF(BreezeVectorAlgebraForDualNumberDouble)(
             DualNumberMatrix(xsSS, DenseMatrix.zeros[Double](xsSS.rows, xsSS.cols)),
@@ -139,12 +139,12 @@ import breeze.linalg.{DenseMatrix, DenseVector}
         )
 
         println(f"${Math.sqrt(loss(BreezeVectorAlgebraForDouble)(DenseVector(ys.toArray), DenseVector(ysHat.toArray)))}g  -- RMSE with initial weights")
-    }
+    }*/
     time {
         import DeriverBreezeReversePlan.given
         val dLoss = ScalaGrad.derive(lossF(BreezeVectorAlgebraForDualDeltaDouble)(
-            DualDeltaMatrix(xsSS, DeltaMatrix.Zero(0.0)),
-            DualDeltaColumnVector(ysSS, DeltaColumnVector.Zero(0.0))
+            DualDeltaMatrix(xsSS, DeltaMonad.zeroM),
+            DualDeltaColumnVector(ysSS, DeltaMonad.zeroCV)
         ))
         val (firstW0, firstWs, lastW0, lastWs) = gradientDescentF(dLoss)
 

@@ -4,6 +4,7 @@ import breeze.linalg.{Transpose, DenseVector}
 
 enum DeltaScalar[P]:
     case Zero(x: P) // TODO how to get ride of x here?
+    case Let(id: Int, rhs: Deltas[P], body: DeltaScalar[P])
     case Val(id: Int)
     case MultiplyVV(m1: DeltaRowVector[P], m2: DeltaColumnVector[P])
     case MultiplyRVDCV(v: Transpose[DenseVector[Double]], d: DeltaColumnVector[P])

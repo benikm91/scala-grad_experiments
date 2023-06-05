@@ -18,6 +18,26 @@ import scalagrad.linearalgebra.auto.reverse.delta.*
 import scalagrad.linearalgebra.auto.reverse.dual.*
 
 object Eval:
+
+    def evalDeltas(id: Int, rhs: Deltas[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
+        rhs match
+            case ds: DeltaScalar[Double] => 
+                evalScalar(input.scalars(id), ds, input.copy(
+                    scalars = input.scalars - id
+                ))
+            case dcv: DeltaColumnVector[Double] => 
+                evalColumnVector(input.columnVectors(id), dcv, input.copy(
+                    columnVectors = input.columnVectors - id
+                ))
+            case drv: DeltaRowVector[Double] =>
+                evalRowVector(input.rowVectors(id), drv, input.copy(
+                    rowVectors = input.rowVectors - id
+                ))
+            case dm: DeltaMatrix[Double] =>
+                evalMatrix(input.matrices(id), dm, input.copy(
+                    matrices = input.matrices - id
+                ))
+
     def evalScalar(output: Double, delta: DeltaScalar[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] =
         delta match
             case DeltaScalar.Zero(_) => input
@@ -28,6 +48,9 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
+            case DeltaScalar.Let(id, rhs, body) => 
+                val nextInput = evalScalar(output, body, input)
+                evalDeltas(id, rhs, nextInput)
             case DeltaScalar.MultiplyVV(m1: DeltaRowVector[Double], m2: DeltaColumnVector[Double]) => ???
             case DeltaScalar.MultiplyRVDCV(v: Transpose[DenseVector[Double]], d: DeltaColumnVector[Double]) => 
                 evalColumnVector(output * v.t, d, input)
@@ -62,6 +85,9 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
+            case DeltaColumnVector.Let(id, rhs, body) => 
+                val nextInput = evalColumnVector(output, body, input)
+                evalDeltas(id, rhs, nextInput)
             case DeltaColumnVector.Transpose(d) => 
                 evalRowVector(output.t, d, input)
             case DeltaColumnVector.MatrixDot(d, v) =>
@@ -96,6 +122,9 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
+            case DeltaRowVector.Let(id, rhs, body) => 
+                val nextInput = evalRowVector(output, body, input)
+                evalDeltas(id, rhs, nextInput)
             case DeltaRowVector.Transpose(d) => 
                 evalColumnVector(output.t, d, input)
             case DeltaRowVector.MatrixDot(v, d) =>
@@ -118,6 +147,9 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
+            case DeltaMatrix.Let(id, rhs, body) => 
+                val nextInput = evalMatrix(output, body, input)
+                evalDeltas(id, rhs, nextInput)
             case DeltaMatrix.AddDMDM(m1, m2) =>
                 evalMatrix(output, m1, 
                     evalMatrix(output, m2, input)

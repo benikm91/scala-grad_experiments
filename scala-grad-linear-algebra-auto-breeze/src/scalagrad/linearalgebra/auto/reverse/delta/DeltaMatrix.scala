@@ -5,6 +5,7 @@ import breeze.linalg.{Transpose, DenseVector, DenseMatrix}
 enum DeltaMatrix[P]:
     case Zero(x: P)
     case Val(id: Int)
+    case Let(id: Int, rhs: Deltas[P], body: DeltaMatrix[P])
     case Transpose(m: DeltaMatrix[P])
     case MatrixDotMDM(m: DenseMatrix[P], d: DeltaMatrix[P])
     case MatrixDotDMM(d: DeltaMatrix[P], m: DenseMatrix[P])
