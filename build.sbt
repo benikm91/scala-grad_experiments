@@ -103,7 +103,7 @@ lazy val scalaGradAutoSpire = (project in file("./scala-grad-auto-spire"))
     scalaGradNumericalDifferentiation % "test->compile;test->test",
   )
   
-// ScalaGrad Linear Algebra API
+// Linear Algebra API
 lazy val scalaGradLinearAlgebraApi = (project in file("./scala-grad-linear-algebra-api"))
   .settings(
     name := "scala-grad-linear-algebra-api",
@@ -115,7 +115,20 @@ lazy val scalaGradLinearAlgebraApi = (project in file("./scala-grad-linear-algeb
     scalaGradAutoSpire,
   )
   
-// ScalaGrad Linear Algebra Breeze 
+// Linear Algebra Numerical Differentitation
+lazy val scalaGradLinearAlgebraNumericalDifferentiationBreeze = (project in file("./scala-grad-linear-algebra-numerical-differentiation"))
+  .settings(
+    name := "scala-grad-linear-algebra-numerical-differentiation",
+    basicSettings,
+    scalaTestSettings,
+    breezeDependency,
+    scalaTestSettings,
+  ).dependsOn(
+    scalaGradLinearAlgebraApi,
+    scalaGradApi % "test->test",
+  )
+
+// Linear Algebra Breeze 
 lazy val scalaGradLinearAlgebraAutoBreeze = (project in file("./scala-grad-linear-algebra-auto-breeze"))
   .settings(
     name := "scala-grad-linear-algebra-auto-breeze",
@@ -123,6 +136,7 @@ lazy val scalaGradLinearAlgebraAutoBreeze = (project in file("./scala-grad-linea
     scalaTestSettings,
   ).dependsOn(
     scalaGradLinearAlgebraApi,
+    scalaGradLinearAlgebraNumericalDifferentiationBreeze % "test->compile;test->test",
   )
 
 // Show library usage

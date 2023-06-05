@@ -10,7 +10,7 @@ object TestUtil:
         Gen.choose(min, max),
         Gen.choose(-max, -min)
       )
-    
+
     def isReasonableDouble(x: Double): Boolean = 
       def isInRange(x: Double): Boolean = min <= x && x <= max
       isInRange(x) || isInRange(-x)

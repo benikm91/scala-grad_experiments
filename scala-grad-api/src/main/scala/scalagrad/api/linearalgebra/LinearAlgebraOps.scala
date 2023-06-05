@@ -296,3 +296,59 @@ trait LinearAlgebraOps:
     extension (s: Scalar)
         @targetName("applyToScalar_Op")
         def map(f: [T] => T => Numeric[T] ?=> T): Scalar = applyToScalar(s, f)
+
+    extension (s: Scalar)
+        @targetName("addSC_Op")
+        def +(c: Double): Scalar = 
+            s + c.toScalar
+        @targetName("subtractSC_Op")
+        def -(c: Double): Scalar = 
+            s - c.toScalar
+        @targetName("multiplySC_Op")
+        def *(c: Double): Scalar = 
+            s * c.toScalar
+        @targetName("divideSC_Op")
+        def /(c: Double): Scalar = 
+            s / c.toScalar
+
+    extension (cv: ColumnVector)
+        @targetName("addCVC_Op")
+        def +(c: Double): ColumnVector = 
+            cv + c.toScalar
+        @targetName("subtractCVC_Op")
+        def -(c: Double): ColumnVector = 
+            cv - c.toScalar
+        @targetName("multiplyCVC_Op")
+        def *(c: Double): ColumnVector = 
+            cv * c.toScalar
+        @targetName("divideCVC_Op")
+        def /(c: Double): ColumnVector = 
+            cv / c.toScalar
+
+    extension (rv: RowVector)
+        @targetName("addRVC_Op")
+        def +(c: Double): RowVector = 
+            rv + c.toScalar
+        @targetName("subtractRVC_Op")
+        def -(c: Double): RowVector = 
+            rv - c.toScalar
+        @targetName("multiplyRVC_Op")
+        def *(c: Double): RowVector = 
+            rv * c.toScalar
+        @targetName("divideRVC_Op")
+        def /(c: Double): RowVector = 
+            rv / c.toScalar
+
+    extension (m: Matrix)
+        @targetName("addMC_Op")
+        def +(c: Double): Matrix = 
+            m + c.toScalar
+        @targetName("subtractMC_Op")
+        def -(c: Double): Matrix = 
+            m - c.toScalar
+        @targetName("multiplyMC_Op")
+        def *(c: Double): Matrix = 
+            m * c.toScalar
+        @targetName("divideMC_Op")
+        def /(c: Double): Matrix = 
+            m / c.toScalar
