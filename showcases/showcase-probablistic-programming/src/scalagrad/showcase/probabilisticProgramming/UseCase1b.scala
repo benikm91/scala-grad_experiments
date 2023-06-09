@@ -19,6 +19,7 @@ import scalagrad.api.ScalaGrad
 import scalagrad.showcase.probabilisticProgramming.distribution.{UnnormalizedDistribution, UnnormalizedLogDistribution}
 import scalagrad.showcase.probabilisticProgramming.metropolisHastings.GaussianMetropolisSampler
 import scalagrad.showcase.probabilisticProgramming.metropolisHastings.MetropolisAdjustedLangevinAlgorithmSampler
+import scalagrad.showcase.probabilisticProgramming.metropolisHastings.HamiltonianMonteCarloSampler
 import scala.util.Random
 
 import scaltair.*
@@ -27,9 +28,9 @@ import scaltair.PlotTargetBrowser.given
 import breeze.stats.meanAndVariance
 
 object UseCase1b extends App:
-    val numWarmup = 5_000
-    val numSamples = 1_000
-    val numDataPoints = 1_000
+    val numWarmup = 1000 // 5_000
+    val numSamples = 1000 // 1_000
+    val numDataPoints = 1000
     val a = Vector(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)  // coefficients for each feature
     val b = 2
     val sigma = 0.5
@@ -119,7 +120,7 @@ object UseCase1b extends App:
         )
             .apply(UnnormalizedLogDistribution(logPosterior[Double]), initialSample)
             .drop(numWarmup)
-            .take(numSamples).toSeq
+           .take(numSamples).toSeq
 
     lazy val malaSamples = 
         MetropolisAdjustedLangevinAlgorithmSampler(
@@ -132,8 +133,27 @@ object UseCase1b extends App:
             .drop(numWarmup)
             .take(numSamples).toSeq
 
+    lazy val hamiltonianSamples = 
+        HamiltonianMonteCarloSampler(
+            new Random(),
+            ScalaGrad.derive(logPosterior[DualNumber[Double]]),
+            stepSize = 1e-1 / numDataPoints, 
+            l = 20,
+        )
+            .apply(UnnormalizedLogDistribution(logPosterior[Double]), initialSample)
+            .drop(numWarmup)
+            .take(numSamples).toSeq
+
+    def calcAcceptanceRate(samples: Seq[Seq[Double]]): Double = 
+        val totalSamples = samples.size
+        val sameSamples = samples.sliding(2).count { case Seq(v1, v2) => v1 == v2 }
+        1.0 - (sameSamples.toDouble / totalSamples)
+
     def plotSamples(samples: Seq[Parameters[Double]], title: String): Unit =
         // Samples to long format
+
+        val ar = calcAcceptanceRate(samples.map(_.a))
+
         val longDf = samples.zipWithIndex.flatMap { case (sample, i) =>
             val a = sample.a.zipWithIndex.map { case (a, j) => s"a$j" -> a }
             val b = Map("b" -> sample.b)
@@ -169,7 +189,7 @@ object UseCase1b extends App:
             
         boxPlot.overlay(trueValues)
             .properties(
-                ChartProperties(title=s"$title $numSamples samples with $numWarmup warmup and $numDataPoints data points"),
+                ChartProperties(title=s"$title $numSamples samples with $numWarmup warmup and $numDataPoints data points, acceptance rate: ${Math.round(ar * 100)}%"),
             )
             .show()
 
@@ -179,10 +199,18 @@ object UseCase1b extends App:
         title="Metro"
     )
     
-    println("MALA")
+    // println("MALA")
+    // plotSamples(
+    //     malaSamples.map(Parameters.fromVector(_)),
+    //     title="MALA"
+    // )
+    // 
+    // println("DONE")
+    
+    println("Hamiltonian")
     plotSamples(
-        malaSamples.map(Parameters.fromVector(_)),
-        title="MALA"
+        hamiltonianSamples.map(Parameters.fromVector(_)),
+        title="Hamiltonian"
     )
     
     println("DONE")
