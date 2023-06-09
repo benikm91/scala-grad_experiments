@@ -20,14 +20,15 @@ trait MetropolisSampler:
                 )
             case target: UnnormalizedDistribution[Sample] =>
                 target(proposedSample) / target(currentSample)
+    
+    def nextSample(target: Target)(currentSample : Sample) : Sample = {
+        val proposedSample = proposer.nextProposal(currentSample)
 
-    def apply(target: Target, initialSample : Sample) : Iterator[Sample] = 
-        def nextStep(currentSample : Sample) : Sample = {
-            val proposedSample = proposer.nextProposal(currentSample)
+        val alpha = min(1.0, acceptancePropability(target, proposedSample, currentSample))
+        val r = uniform.nextDouble()
+        if (r < alpha) then proposedSample else currentSample
+    }
 
-            val alpha = min(1.0, acceptancePropability(target, proposedSample, currentSample))
-            val r = uniform.nextDouble()
-            if (r < alpha) then proposedSample else currentSample
-        }
-        Iterator.iterate(initialSample)(nextStep)
+    def apply(target: Target, initialSample : Sample): Iterator[Sample] = 
+        Iterator.iterate(initialSample)(nextSample(target))
 

@@ -22,6 +22,7 @@ import scalagrad.api.ScalaGrad
 import scalagrad.showcase.probabilisticProgramming.distribution.{UnnormalizedDistribution, UnnormalizedLogDistribution}
 import scalagrad.showcase.probabilisticProgramming.metropolisHastings.GaussianMetropolisSampler
 import scalagrad.showcase.probabilisticProgramming.metropolisHastings.MetropolisAdjustedLangevinAlgorithmSampler
+import scalagrad.showcase.probabilisticProgramming.metropolisHastings.HamiltonianMonteCarloSampler
 
 import scaltair.*
 import scaltair.PlotTargetBrowser.given
@@ -37,8 +38,8 @@ object MHSampling extends App {
     import breeze.numerics.exp
 
     val rng = new Random()
-    val numWarmup = 10_000
-    val numSamples = 12_000
+    val numWarmup = 5_000
+    val numSamples = 10_000
  
     // target distribution from which we want to sample
     def pLog[T: Numeric: Trig](x: Vector[T], mean: Vector[T], cov: Vector[Vector[T]]): T = {
@@ -96,13 +97,39 @@ object MHSampling extends App {
             .drop(numWarmup)
             .take(numSamples).toSeq
 
+    lazy val hastings = 
+        HamiltonianMonteCarloSampler(
+            new Random(),
+            dTarget,
+            stepSize,
+            l=20
+        )
+    lazy val hastingsSamples = hastings
+            .apply(target, initialSample)
+            .drop(numWarmup)
+            .take(numSamples).toSeq
+
     lazy val bMetroSamples = metroSamples.map(s => DenseVector(s.toArray))
 
     lazy val metroMean = bMetroSamples.reduce(_ + _) / bMetroSamples.size.toDouble
     lazy val metroCov = bMetroSamples.map(s => (s - metroMean) * (s - metroMean).t).reduce(_ + _) / bMetroSamples.size.toDouble
 
+    def calcAcceptanceRate(samples: Seq[Seq[Double]]): Double = 
+        val totalSamples = samples.size
+        val sameSamples = samples.sliding(2).count { case Seq(v1, v2) => v1 == v2 }
+        1.0 - (sameSamples.toDouble / totalSamples)
+
     def plotSamples(samples: Seq[Seq[Double]], title: String) =
-        val data = Data.fromRows(samples.map(v => Map("x1" -> v(0), "x2" -> v(1))))
+        val acceptanceRate = calcAcceptanceRate(samples)
+        val dataMap = samples.map(v => Map("x1" -> v(0), "x2" -> v(1))).toList
+            ++ List(
+                // "fix" domain of grid hack :)
+                Map("x1" -> -50d, "x2" -> -50d),
+                Map("x1" -> 50d, "x2" -> -50d),
+                Map("x1" -> -50d, "x2" -> 50d),
+                Map("x1" -> 50d, "x2" -> 50d)
+            )
+        val data = Data.fromRows(dataMap)
         val plot = Chart(data)
             .encode(
                 Channel.X("x1", FieldType.Quantitative),
@@ -111,10 +138,13 @@ object MHSampling extends App {
             .markCircle()
             .properties(
                 ChartProperties(
-                    title=s"$title $numSamples samples with $numWarmup warmup"
+                    title=s"$title $numSamples samples, $numWarmup warmup, ${Math.round(acceptanceRate * 1000) / 10} ar"
                 )
             )
             .show()
+
+    val trueSamples = MultivariateGaussian(DenseVector(mean.toArray), DenseMatrix(covariance.toArray: _*)).sample(numSamples).map(_.toVector).toSeq
+    plotSamples(trueSamples.map(_.toScalaVector), f"True Samples")
 
     plotSamples(metroSamples, f"Metro (${metro.showHyperParams})")
 
@@ -130,6 +160,16 @@ object MHSampling extends App {
 
     println(f"malaMean ${malaMean}")
     println(f"malaCov ${malaCov}")
+    
+    lazy val bHastingsSamples = hastingsSamples.map(s => DenseVector(s.toArray))
+
+    lazy val hastingsMean = bHastingsSamples.reduce(_ + _) / bHastingsSamples.size.toDouble
+    lazy val hastingsCov = bHastingsSamples.map(s => (s - hastingsMean) * (s - hastingsMean).t).reduce(_ + _) / bHastingsSamples.size.toDouble
+
+    plotSamples(hastingsSamples, f"hastings (${hastings.showHyperParams})")
+
+    println(f"hastingsMean ${hastingsMean}")
+    println(f"hastingsCov ${hastingsCov}")
 
 }
 
@@ -137,29 +177,6 @@ object MHSampling extends App {
  * Stuff that is in Scalismo but I need to implement it here abstractly with Spire to make it work with ScalaGrad.
  * 
  * Code mostly generated with ChatGPT.
- * 
- * Scalismo Implementation:
-    def next(current: A, logger: AcceptRejectLogger[A]): A = {
-    // reference p value
-    val currentP = evaluator.logValue(current)
-    // proposal
-    val proposal = generator.propose(current)
-    val proposalP = evaluator.logValue(proposal)
-    // transition ratio
-    val t = generator.logTransitionRatio(current, proposal)
-    // acceptance probability
-    val a = proposalP - currentP - t
-
-    // accept or reject
-    if (a > 0.0 || random.scalaRandom.nextDouble() < exp(a)) {
-      logger.accept(current, proposal, generator, evaluator)
-      proposal
-    } else {
-      logger.reject(current, proposal, generator, evaluator)
-      current
-    }
-  }
- * 
  */
 object Stuff:
     import spire.math.Numeric

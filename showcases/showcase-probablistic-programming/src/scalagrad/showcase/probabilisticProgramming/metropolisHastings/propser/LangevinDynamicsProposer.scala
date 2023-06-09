@@ -8,17 +8,9 @@ import scala.math.sqrt
 
 case class LangevinDynamicsProposer(dTarget: Vector[Double] => Vector[Double], stepSize: Double, sigma: Double) extends Proposer[Vector[Double]]:
 
-    private def gaussianDiagSample(x : Vector[Double], sigma: Double): Vector[Double] = {
-        val mvn = MultivariateGaussian(
-            DenseVector(x.toArray),
-            DenseMatrix.eye[Double](x.size) * sigma,
-        )
-        mvn.draw().toArray.toVector
-    }
-
     override def nextProposal(x: Vector[Double]) =
         val step = dTarget(x).map(_ * stepSize)
-        val gaussianNoise = gaussianDiagSample(Vector.fill(x.size)(0), 1.0)
+        val gaussianNoise = Proposer.gaussianDiagSample(Vector.fill(x.size)(0), 1.0)
         val noiseF = sqrt(2 * stepSize)
         val noise = gaussianNoise.map(_ * noiseF)
         x.zip(step).map(_ + _).zip(noise).map(_ + _)
