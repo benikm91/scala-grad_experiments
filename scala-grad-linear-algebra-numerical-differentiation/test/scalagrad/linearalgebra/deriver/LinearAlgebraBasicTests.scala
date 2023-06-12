@@ -71,9 +71,14 @@ abstract class LinearAlgebraBasicTests(
         x.T * x
       )
     }
+    "work for element wise" in {
+      testCV((ops: LinearAlgebraOps) => (x: ops.ColumnVector) =>
+        x.map(_ * 10.0).sum
+      )
+    }
     "work with a mixture of all operations" in {
       testCV((ops: LinearAlgebraOps) => (x: ops.ColumnVector) =>
-        (x * 10.0 + x * 20.0 - x / 5.0 + x / 3.0).sum
+        (x * 10.0 + x * 20.0 - x.map(_ / 2) / 5.0 + x / 3.0).map(_ * 10.0).sum
       )
     }
   }

@@ -5,7 +5,10 @@ import scalagrad.api.CreateDual
 
 import scala.math.Fractional.Implicits.given
 
-case class DualNumber[T](value: T, derivative: T)(using f: Fractional[T]) extends Dual[T, T, DualNumber[T]](value, derivative):
+case class DualNumber[T](value: T, derivative: T)(using f: Fractional[T]) extends Dual[T, T, DualNumber[T]]:
+
+  inline override def v = value
+  inline override def dv = derivative
 
   val cd: CreateDual[T, T, DualNumber[T]] = summon[CreateDual[T, T, DualNumber[T]]]
 

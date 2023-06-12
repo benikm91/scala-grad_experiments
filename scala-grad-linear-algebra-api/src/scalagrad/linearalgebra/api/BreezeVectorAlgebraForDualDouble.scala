@@ -24,7 +24,7 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     type RowVectorD
     type MatrixD
 
-    override type Scalar <: DualScalar[Double, ScalarD]
+    override type Scalar <: DualScalar[Double, ScalarD, Scalar]
     override type ColumnVector <: DualColumnVector[Double, ColumnVectorD]
     override type RowVector <: DualRowVector[Double, RowVectorD]
     override type Matrix <: DualMatrix[Double, MatrixD]
@@ -289,36 +289,26 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     override def sumCV(v: ColumnVector): Scalar =
         createScalar(breeze.linalg.sum(v.v), sumDCV(v.dv, v.v.length))
 
-    def timesElementWiseMDM(m1: DenseMatrix[Double], dm2: MatrixD): MatrixD
+    def elementAtDM(dm: MatrixD, iRow: Int, jCol: Int, nRows: Int, nCols: Int): ScalarD
 
-    override def elementWiseOpsM(v: Matrix, f: [T] => T => Numeric[T] ?=> T): Matrix = 
-        import scalagrad.auto.forward.DeriverForwardPlan.given
-        val df = ScalaGrad.derive(f[DualNumber[Double]])
-        def dElementWiseOpsM(m: DenseMatrix[Double], dm: MatrixD): MatrixD =
-            timesElementWiseMDM(m.map(df), dm)
-        createMatrix(v.v.map(f[Double]), dElementWiseOpsM(v.v, v.dv))
+    def elementAtM(m: Matrix, iRow: Int, jCol: Int): Scalar = 
+        createScalar(
+            m.v(iRow, jCol),
+            elementAtDM(m.dv, iRow, jCol, m.rows, m.cols)
+        )
 
-    def timesElementWiseCVDCV(v1: DenseVector[Double], dv2: ColumnVectorD): ColumnVectorD
+    def elementAtDCV(dv: ColumnVectorD, index: Int, length: Int): ScalarD
 
-    override def elementWiseOpsCV(v: ColumnVector, f: [T] => T => Numeric[T] ?=> T): ColumnVector =
-        import scalagrad.auto.forward.DeriverForwardPlan.given
-        val df = ScalaGrad.derive(f[DualNumber[Double]])
-        def dElementWiseOpsCV(v: DenseVector[Double], dv: ColumnVectorD): ColumnVectorD =
-            timesElementWiseCVDCV(v.map(df), dv)
-        createColumnVector(v.v.map(f[Double]), dElementWiseOpsCV(v.v, v.dv))
+    def elementAtCV(v: ColumnVector, index: Int): Scalar = 
+        createScalar(
+            v.v(index),
+            elementAtDCV(v.dv, index, v.length)
+        )
 
-    def timesElementWiseRVDRV(v1: Transpose[DenseVector[Double]], dv2: RowVectorD): RowVectorD
+    def elementAtDRV(dv: RowVectorD, index: Int, length: Int): ScalarD
 
-    override def elementWiseOpsRV(v: RowVector, f: [T] => T => Numeric[T] ?=> T): RowVector =
-        import scalagrad.auto.forward.DeriverForwardPlan.given
-        val df = ScalaGrad.derive(f[DualNumber[Double]])
-        def dElementWiseOpsRV(v: Transpose[DenseVector[Double]], dv: RowVectorD): RowVectorD =
-            timesElementWiseRVDRV(v.t.map(df).t, dv)
-        createRowVector(v.v.t.map(f[Double]).t, dElementWiseOpsRV(v.v, v.dv))
-
-    override def applyToScalar(s: Scalar, f: [T] => T => Numeric[T] ?=> T): Scalar =
-        import scalagrad.auto.forward.DeriverForwardPlan.given
-        val df = ScalaGrad.derive(f[DualNumber[Double]])
-        def dApplyToScalar(s: Double, ds: ScalarD): ScalarD =
-            timesSDS(df(s), ds)
-        createScalar(f(s.v), dApplyToScalar(s.v, s.dv))
+    def elementAtRV(v: RowVector, index: Int): Scalar = 
+        createScalar(
+            v.v(index),
+            elementAtDRV(v.dv, index, v.length)
+        )

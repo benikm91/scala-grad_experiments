@@ -149,14 +149,15 @@ class ScalaLinearAlgebraOpsFor[P: Fractional]() extends LinearAlgebraOps:
 
     override def sumCV(v: ColumnVector): Scalar = v.sum
 
-    override def elementWiseOpsM(v: Matrix, f: [T] => T => Numeric[T] ?=> T): Matrix = 
-        v.map(row => row.map(a => f[P](a)))
+    override def elementWiseOpsM(v: Matrix, f: Scalar => Scalar): Matrix = 
+        v.map(row => row.map(a => f(a)))
 
-    override def elementWiseOpsCV(v: ColumnVector, f: [T] => T => Numeric[T] ?=> T): ColumnVector =
-        v.map(a => f[P](a))
+    override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector =
+        v.map(a => f(a))
 
-    override def elementWiseOpsRV(v: RowVector, f: [T] => T => Numeric[T] ?=> T): RowVector = 
-        v.map(a => f[P](a))
+    override def elementWiseOpsRV(v: RowVector, f: Scalar => Scalar): RowVector = 
+        v.map(a => f(a))
 
-    override def applyToScalar(s: Scalar, f: [T] => T => Numeric[T] ?=> T): Scalar =
-        f[P](s)
+    override def elementAtM(m: Matrix, rowI: Int, columnJ: Int): Scalar = m(rowI)(columnJ)
+
+    override def elementAtCV(v: ColumnVector, i: Int): Scalar = v(i)

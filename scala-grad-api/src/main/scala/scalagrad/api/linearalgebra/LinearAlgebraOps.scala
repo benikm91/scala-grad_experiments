@@ -273,29 +273,29 @@ trait LinearAlgebraOps:
         @targetName("sumCV_Op")
         def sum: Scalar = sumCV(v)
 
-    def elementWiseOpsM(v: Matrix, f: [T] => T => Numeric[T] ?=> T): Matrix
+    def elementWiseOpsM(m: Matrix, f: Scalar => Scalar): Matrix
 
     extension (m: Matrix)
         @targetName("elementWiseOpsM_Op")
-        def map(f: [T] => T => Numeric[T] ?=> T): Matrix = elementWiseOpsM(m, f)
+        def map(f: Scalar => Scalar): Matrix = elementWiseOpsM(m, f)
 
-    def elementWiseOpsCV(v: ColumnVector, f: [T] => T => Numeric[T] ?=> T): ColumnVector
+    def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector
 
     extension (v: ColumnVector)
         @targetName("elementWiseOpsCV_Op")
-        def map(f: [T] => T => Numeric[T] ?=> T): ColumnVector = elementWiseOpsCV(v, f)
+        def map(f: Scalar => Scalar): ColumnVector = elementWiseOpsCV(v, f)
 
-    def elementWiseOpsRV(v: RowVector, f: [T] => T => Numeric[T] ?=> T): RowVector
+    def elementWiseOpsRV(v: RowVector, f: Scalar => Scalar): RowVector
 
     extension (v: RowVector)
         @targetName("elementWiseOpsRV_Op")
-        def map(f: [T] => T => Numeric[T] ?=> T): RowVector = elementWiseOpsRV(v, f)
+        def map(f: Scalar => Scalar): RowVector = elementWiseOpsRV(v, f)
 
-    def applyToScalar(s: Scalar, f: [T] => T => Numeric[T] ?=> T): Scalar
+    def applyToScalar(s: Scalar, f: Scalar => Scalar): Scalar = f(s)
 
     extension (s: Scalar)
         @targetName("applyToScalar_Op")
-        def map(f: [T] => T => Numeric[T] ?=> T): Scalar = applyToScalar(s, f)
+        def map(f: Scalar => Scalar): Scalar = applyToScalar(s, f)
 
     extension (s: Scalar)
         @targetName("addSC_Op")
@@ -352,3 +352,6 @@ trait LinearAlgebraOps:
         @targetName("divideMC_Op")
         def /(c: Double): Matrix = 
             m / c.toScalar
+
+    def elementAtM(m: Matrix, rowI: Int, columnJ: Int): Scalar
+    def elementAtCV(v: ColumnVector, i: Int): Scalar

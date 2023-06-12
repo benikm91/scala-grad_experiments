@@ -109,14 +109,15 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
 
     override def sumCV(v: ColumnVector): Scalar = breeze.linalg.sum(v)
 
-    override def elementWiseOpsM(v: Matrix, f: [T] => T => Numeric[T] ?=> T): Matrix = 
-        v.map(f[Double])
+    override def elementWiseOpsM(v: Matrix, f: Scalar => Scalar): Matrix = 
+        v.map(f)
 
-    override def elementWiseOpsCV(v: ColumnVector, f: [T] => T => Numeric[T] ?=> T): ColumnVector =
-        v.map(f[Double])
+    override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector =
+        v.map(f)
 
-    override def elementWiseOpsRV(v: RowVector, f: [T] => T => Numeric[T] ?=> T): RowVector =
-        v.t.map(f[Double]).t
+    override def elementWiseOpsRV(v: RowVector, f: Scalar => Scalar): RowVector =
+        v.t.map(f).t
 
-    override def applyToScalar(s: Scalar, f: [T] => T => Numeric[T] ?=> T): Scalar =
-        f[Double](s)
+    override def elementAtCV(v: DenseVector[Double], i: Int): Scalar = v(i)
+
+    override def elementAtM(m: DenseMatrix[Double], i: Int, j: Int): Scalar = m(i, j)

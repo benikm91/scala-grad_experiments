@@ -3,10 +3,10 @@ package scalagrad.api
 import scala.math.Fractional.Implicits.given
 
 
-trait Dual[P, D, PD <: Dual[P, D, PD]](value: P, derivative: D)(using f: Fractional[P]):
+trait Dual[P, D, PD <: Dual[P, D, PD]](using f: Fractional[P]):
 
-    inline def v = value
-    inline def dv = derivative
+    def v: P
+    def dv: D
 
     val cd: CreateDual[P, D, PD]
     import cd.*

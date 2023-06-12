@@ -14,3 +14,4 @@ enum DeltaMatrix[P]:
     case AddDMDM(m1: DeltaMatrix[P], m2: DeltaMatrix[P])
     case AddDMDCV(m: DeltaMatrix[P], v: DeltaColumnVector[P])
     case ElementWiseScale(v: DenseMatrix[P], d: DeltaMatrix[P])
+    case FromElements(values: Vector[DeltaScalar[P]])

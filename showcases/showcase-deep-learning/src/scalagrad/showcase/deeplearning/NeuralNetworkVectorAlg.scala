@@ -14,6 +14,10 @@ import scalagrad.linearalgebra.auto.reverse.dual.{DeltaMonad, DualDeltaMatrix, D
 import scalagrad.linearalgebra.auto.reverse.delta.{DeltaMatrix, DeltaColumnVector, DeltaRowVector, DeltaScalar}
 import breeze.linalg.{DenseMatrix, DenseVector}
 
+import scalagrad.spire.auto.dual.DualIsNumeric.given
+import spire.math.Numeric
+import spire.implicits.*
+
 @main def neuralNetworkVectorAlg() = 
 
     val fishs = FishDataSet.load
@@ -36,21 +40,21 @@ import breeze.linalg.{DenseMatrix, DenseVector}
         firstWs: ops.Matrix,
         lastW0: ops.Scalar,
         lastWs: ops.ColumnVector,
-    ): ops.Scalar = 
+    )(using num: Numeric[ops.Scalar]): ops.Scalar = 
         import ops.*
         val h = firstWs * x + firstW0
-        val hh = h.map([T] => (x: T) => (num: Numeric[T]) ?=> relu(x))
+        val hh = h.map(relu)
         ops.transposeColumVector(hh) * lastWs + lastW0
 
     def square[P: Numeric](x: P) = 
         summon[Numeric[P]].times(x, x)
 
-    def loss(ops: LinearAlgebraOps)(ys: ops.ColumnVector, ysHat: ops.ColumnVector): ops.Scalar =
+    def loss(ops: LinearAlgebraOps)(ys: ops.ColumnVector, ysHat: ops.ColumnVector)(using Numeric[ops.Scalar]): ops.Scalar =
         import ops.*
         val residuals = ys - ysHat
-        val residualsSqr = residuals.map([T] => (x: T) => (num: Numeric[T]) ?=> square(x))
+        val residualsSqr = residuals.map(square)
         // residualsSqr.sum / (2 * ys.length).toScalar
-        residualsSqr.reduce([T] => (x: T, y: T) => (num: Numeric[T]) ?=> num.plus(x, y)) / (2 * ys.length).toScalar
+        residualsSqr.reduce([T] => (x: T, y: T) => (num: scala.math.Numeric[T]) ?=> num.plus(x, y)) / (2 * ys.length).toScalar
 
     def gradientDescent(ops: LinearAlgebraOps)(
         firstW0: ops.ColumnVector,
@@ -105,22 +109,18 @@ import breeze.linalg.{DenseMatrix, DenseVector}
         firstWs: ops.Matrix,
         lastW0: ops.Scalar,
         lastWs: ops.ColumnVector,
-    ): ops.Scalar =
+    )(using Numeric[ops.Scalar]): ops.Scalar =
         import ops.*
         val h = xs * ops.transpose(firstWs) + firstW0
-        val hh = ops.elementWiseOpsM(h, [T] => (x: T) => (num: Numeric[T]) ?=> relu(x))
+        val hh = h.map(relu)
         val ysHat = hh * lastWs + lastW0
         loss(ops)(ys, ysHat)
-    
-    println(lossF(BreezeVectorAlgebraForDouble)(xsSS, ysSS)(
-        initFirstW0, initFirstWs, initLastW0, initLastWs
-    ))
 
     val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
-        initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 100_000
+        initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 5 // 100_000
     )
     
-    /*time {
+    time {
         import DeriverBreezeForwardPlan.given
         val dLoss = ScalaGrad.derive(lossF(BreezeVectorAlgebraForDualNumberDouble)(
             DualNumberMatrix(xsSS, DenseMatrix.zeros[Double](xsSS.rows, xsSS.cols)),
@@ -128,7 +128,7 @@ import breeze.linalg.{DenseMatrix, DenseVector}
         )))
         val (firstW0, firstWs, lastW0, lastWs) = gradientDescentF(dLoss)
 
-        val ysHat = StandardScaler.inverseScaleColumn( 
+        val ysHat = StandardScaler.inverseScaleColumn(
             (0 until xsSS.rows).map { i =>
                 val row = xsSS(i, ::).t
                 neuralNetwork(BreezeVectorAlgebraForDouble)(
@@ -139,7 +139,7 @@ import breeze.linalg.{DenseMatrix, DenseVector}
         )
 
         println(f"${Math.sqrt(loss(BreezeVectorAlgebraForDouble)(DenseVector(ys.toArray), DenseVector(ysHat.toArray)))}g  -- RMSE with initial weights")
-    }*/
+    }
     time {
         import DeriverBreezeReversePlan.given
         val dLoss = ScalaGrad.derive(lossF(BreezeVectorAlgebraForDualDeltaDouble)(
@@ -160,4 +160,3 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 
         println(f"${Math.sqrt(loss(BreezeVectorAlgebraForDouble)(DenseVector(ys.toArray), DenseVector(ysHat.toArray)))}g  -- RMSE with initial weights")
     }
-    

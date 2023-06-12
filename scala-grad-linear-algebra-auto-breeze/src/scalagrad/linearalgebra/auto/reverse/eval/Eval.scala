@@ -54,6 +54,8 @@ object Eval:
             case DeltaScalar.MultiplyVV(m1: DeltaRowVector[Double], m2: DeltaColumnVector[Double]) => ???
             case DeltaScalar.MultiplyRVDCV(v: Transpose[DenseVector[Double]], d: DeltaColumnVector[Double]) => 
                 evalColumnVector(output * v.t, d, input)
+            case DeltaScalar.MatrixDotDRVCV(d: DeltaRowVector[Double], v: DenseVector[Double]) =>
+                evalRowVector((output * v).t, d, input)
             case DeltaScalar.Add(d1: DeltaScalar[Double], d2: DeltaScalar[Double]) =>
                 evalScalar(output, d1, 
                     evalScalar(output, d2, input)
@@ -74,6 +76,38 @@ object Eval:
                 evalScalar(output / scale, d, input)
             case DeltaScalar.Scale(d: DeltaScalar[Double], scale: Double) =>
                 evalScalar(output * scale, d, input)
+            case DeltaScalar.ElementAtM(m: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) =>
+                val id = m.asInstanceOf[DeltaMatrix.Val[Double]].id
+                input.copy(
+                    matrices = 
+                        input.matrices.updatedWith(id)(ov => 
+                            val v = ov.getOrElse(DenseMatrix.zeros[Double](nRows, nCols))
+                            v(row, col) += output
+                            Some(v)
+                        )
+                )
+            case DeltaScalar.ElementAtCV(delta: DeltaColumnVector[Double], index: Int, deltaLength: Int) =>
+                val id = delta.asInstanceOf[DeltaColumnVector.Val[Double]].id
+                input.copy(
+                    columnVectors = 
+                        input.columnVectors.updatedWith(id)(ov => 
+                            val v = ov.getOrElse(DenseVector.zeros[Double](deltaLength))
+                            v(index) += output
+                            Some(v)
+                        )
+                )
+            case DeltaScalar.ElementAtRV(delta: DeltaRowVector[Double], index: Int, deltaLength: Int) =>
+                import breeze.linalg.operators.HasOps.liftSlice
+                input.copy(
+                    rowVectors = 
+                        input.rowVectors.updatedWith(index)(v => v.orElse(Some(
+                            DenseVector.fill(deltaLength)(0.0).t
+                        ).map(v =>
+                            val vT = v.t
+                            vT(index) += output
+                            v
+                        )))
+                )
 
     def evalColumnVector(output: DenseVector[Double], delta: DeltaColumnVector[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
         delta match
@@ -94,6 +128,10 @@ object Eval:
                 evalMatrix(output * v.t, d, input)
             case DeltaColumnVector.MatrixDot2(v, d) =>
                 evalColumnVector(v.t * output, d, input)
+            case DeltaColumnVector.Scale(d, f) =>
+                evalColumnVector(output * f, d, input)
+            case DeltaColumnVector.Div(d, f) =>
+                evalColumnVector(output / f, d, input)
             case DeltaColumnVector.AddVV(d1, d2) => 
                 evalColumnVector(output, d1, 
                     evalColumnVector(output, d2, input)
@@ -110,7 +148,11 @@ object Eval:
                 )
             case DeltaColumnVector.ElementWiseScale(v, d) =>
                 evalColumnVector(output *:* v, d, input)
-
+            case DeltaColumnVector.FromElements(values) =>
+                values.zipWithIndex.foldLeft(input)((input, t) => 
+                    val (dScalar, index) = t
+                    evalScalar(output(index), dScalar, input)
+                )
 
     def evalRowVector(output: Transpose[DenseVector[Double]], delta: DeltaRowVector[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
         delta match
@@ -172,6 +214,12 @@ object Eval:
                 evalMatrix(output *:* v, d, input)
             case DeltaMatrix.MatrixDotDMM(d, m) =>
                 evalMatrix(output * m.t, d, input)
+            case DeltaMatrix.FromElements(values) =>
+                values.zipWithIndex.foldLeft(input)((input, t) => 
+                    val (dScalar, index) = t
+                    val (iRow, jCol) = (index / output.cols, index % output.cols)
+                    evalScalar(output(iRow, jCol), dScalar, input)
+                )
 
     case class AccumulatedResult[P](
         scalars: Map[Int, P],

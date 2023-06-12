@@ -8,8 +8,11 @@ import scalagrad.api.Dual
 
 import DualDelta.D
 
-case class DualDelta[P: Fractional](value: P, deltaM: D[P]) extends Dual[P, D[P], DualDelta[P]](value, deltaM):
+case class DualDelta[P: Fractional](value: P, deltaM: D[P]) extends Dual[P, D[P], DualDelta[P]]:
   
+  inline override def v = value
+  inline override def dv = deltaM
+
   val cd = summon[CreateDual[P, D[P], DualDelta[P]]]
 
   def deltaLet[P](delta: Delta[P]): DeltaMonad[P, DeltaId] = DeltaMonad[P, DeltaId](next => 
