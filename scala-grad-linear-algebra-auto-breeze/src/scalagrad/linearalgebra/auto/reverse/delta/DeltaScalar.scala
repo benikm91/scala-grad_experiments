@@ -16,6 +16,7 @@ enum DeltaScalar[P]:
     case Div(s1: DeltaScalar[P], f: P)
     case Scale(s1: DeltaScalar[P], f: P)
     case Sum(v: DeltaColumnVector[P], vectorLength: Int)
+    case SumM(m: DeltaMatrix[P], nRows: Int, nCols: Int)
     case ElementAtM(m: DeltaMatrix[P], row: Int, col: Int, nRows: Int, nCols: Int)
     case ElementAtCV(delta: DeltaColumnVector[P], index: Int, deltaLength: Int)
     case ElementAtRV(delta: DeltaRowVector[P], index: Int, deltaLength: Int)

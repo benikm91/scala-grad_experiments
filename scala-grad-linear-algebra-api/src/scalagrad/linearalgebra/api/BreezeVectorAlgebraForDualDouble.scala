@@ -41,8 +41,10 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
 
     def zeroD: ScalarD
 
-    def liftToScalar(d: Int): Scalar = createScalar(d.toDouble, zeroD)
-    def liftToScalar(d: Double): Scalar = createScalar(d, zeroD)
+    override def liftToScalar(d: Int): Scalar = createScalar(d.toDouble, zeroD)
+    override def liftToScalar(d: Double): Scalar = createScalar(d, zeroD)
+
+    override def scalarToDouble(s: Scalar) = s.v
 
     override def inverse(m: Matrix): Matrix = ???
     override def determinant(m: Matrix): Scalar = ???
@@ -115,14 +117,15 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
 
     def addDRVDRV(dv1: RowVectorD, dv2: RowVectorD): RowVectorD
     def timesDRVM(dv: RowVectorD, m: DenseMatrix[Double]): RowVectorD
-    def timesRDMV(v: Transpose[DenseVector[Double]], dv: MatrixD): RowVectorD
+    def timesRVDM(v: Transpose[DenseVector[Double]], dv: MatrixD): RowVectorD
 
     override def timesRVM(v: RowVector, m: Matrix): RowVector =
-        def dTimes(v1: Transpose[DenseVector[Double]], dv1: RowVectorD, v2: DenseMatrix[Double], dv2: MatrixD): RowVectorD =
+        def dTimes(rv: Transpose[DenseVector[Double]], drv: RowVectorD, m: DenseMatrix[Double], dm: MatrixD): RowVectorD =
             addDRVDRV(
-                timesDRVM(dv1, v2), 
-                timesRDMV(v1, dv2)
+                timesDRVM(drv, m), 
+                timesRVDM(rv, dm)
             )
+        val xx = v.v * m.v
         createRowVector(v.v * m.v, dTimes(v.v, v.dv, m.v, m.dv))    
 
     def addDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD
@@ -165,12 +168,12 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     def addDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD
 
     override def plusMCV(m: Matrix, v: ColumnVector): Matrix =
-        createMatrix(m.v(breeze.linalg.*, ::) + v.v, addDMDCV(m.dv, v.dv))
+        createMatrix(m.v(::, breeze.linalg.*) + v.v, addDMDCV(m.dv, v.dv))
         
     def addDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD
 
     override def plusMRV(m: Matrix, v: RowVector): Matrix =
-        createMatrix(m.v(::, breeze.linalg.*) + v.v.t, addDMDRV(m.dv, v.dv))
+        createMatrix(m.v(breeze.linalg.*, ::) + v.v.t, addDMDRV(m.dv, v.dv))
 
     def addDMDS(dm: MatrixD, ds: ScalarD): MatrixD
     def addDSDM(ds: ScalarD, dm: MatrixD): MatrixD = addDMDS(dm, ds)  // commutative
@@ -289,12 +292,47 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     override def sumCV(v: ColumnVector): Scalar =
         createScalar(breeze.linalg.sum(v.v), sumDCV(v.dv, v.v.length))
 
+    def sumDM(dm: MatrixD, nRows: Int, nCols: Int): ScalarD
+
+    override def sumM(m: Matrix): Scalar = 
+        createScalar(breeze.linalg.sum(m.v), sumDM(m.dv, m.v.rows, m.v.cols))
+
+    def elementWiseTimesMDM(m: DenseMatrix[Double], dm: MatrixD): MatrixD
+    def elementWiseTimesDMM(dm: MatrixD, m: DenseMatrix[Double]): MatrixD = elementWiseTimesMDM(m, dm)  // commutative
+
+    override def elementWiseTimesMM(m1: Matrix, m2: Matrix): Matrix = 
+        def dElementWiseTimesMM(m1: DenseMatrix[Double], dm1: MatrixD, m2: DenseMatrix[Double], dm2: MatrixD): MatrixD =
+            addDMDM(
+                elementWiseTimesMDM(m1, dm2),
+                elementWiseTimesDMM(dm1, m2)
+            )
+        createMatrix(m1.v *:* m2.v, dElementWiseTimesMM(m1.v, m1.dv, m2.v, m2.dv))
+
+    def elementWiseTimesCVDCV(v: DenseVector[Double], dv: ColumnVectorD): ColumnVectorD
+    def elementWiseTimesDCVCV(dv: ColumnVectorD, v: DenseVector[Double]): ColumnVectorD = elementWiseTimesCVDCV(v, dv)  // commutative
+
+    override def elementWiseTimesCVCV(v1: ColumnVector, v2: ColumnVector): ColumnVector = 
+        def dElementWiseTimesCVCV(v1: DenseVector[Double], dv1: ColumnVectorD, v2: DenseVector[Double], dv2: ColumnVectorD): ColumnVectorD =
+            addDCVDCV(
+                elementWiseTimesDCVCV(dv1, v2),
+                elementWiseTimesCVDCV(v1, dv2)
+            )
+        createColumnVector(v1.v *:* v2.v, dElementWiseTimesCVCV(v1.v, v1.dv, v2.v, v2.dv))
+    
     def elementAtDM(dm: MatrixD, iRow: Int, jCol: Int, nRows: Int, nCols: Int): ScalarD
 
     def elementAtM(m: Matrix, iRow: Int, jCol: Int): Scalar = 
         createScalar(
             m.v(iRow, jCol),
             elementAtDM(m.dv, iRow, jCol, m.rows, m.cols)
+        )
+
+    def rowAtDM(dm: MatrixD, rowI: Int, nRows: Int, nCols: Int): RowVectorD
+
+    override def rowAtM(m: Matrix, rowI: Int): RowVector =
+        createRowVector(
+            m.v(rowI, ::),
+            rowAtDM(m.dv, rowI, m.rows, m.cols)
         )
 
     def elementAtDCV(dv: ColumnVectorD, index: Int, length: Int): ScalarD
@@ -311,4 +349,12 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
         createScalar(
             v.v(index),
             elementAtDRV(v.dv, index, v.length)
+        )
+
+    def stackDRows(rows: RowVectorD*): MatrixD
+
+    override def stackRows(rows: RowVector*): Matrix = 
+        createMatrix(
+            DenseMatrix.vertcat(rows.map(_.v.t.toDenseMatrix): _*),
+            stackDRows(rows.map(_.dv): _*)
         )

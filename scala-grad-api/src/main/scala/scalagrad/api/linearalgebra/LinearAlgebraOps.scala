@@ -42,6 +42,11 @@ trait LinearAlgebraOps:
     extension (d: Double)
         def toScalar: Scalar = liftToScalar(d)
 
+    def scalarToDouble(d: Scalar): Double
+
+    extension (d: Scalar)
+        def toDouble: Double = scalarToDouble(d)
+
     def inverse(m: Matrix): Matrix
 
     extension (m: Matrix)
@@ -261,11 +266,11 @@ trait LinearAlgebraOps:
         @targetName("divideSS_Op")
         def /(s2: Scalar): Scalar = divideSS(s, s2)
 
-    def reduceCV(v: ColumnVector)(f: [T] => (T, T) => Numeric[T] ?=> T): Scalar
+    def foldLeftCV(s: Scalar)(v: ColumnVector)(f: (Scalar, Scalar) => Scalar): Scalar
 
     extension (v: ColumnVector)
-        @targetName("reduce_Op")
-        def reduce(f: [T] => (T, T) => Numeric[T] ?=> T): Scalar = reduceCV(v)(f)
+        @targetName("foldLeft_Op")
+        def foldLeft(s: Scalar)(f: (Scalar, Scalar) => Scalar): Scalar = foldLeftCV(s)(v)(f)
 
     def sumCV(v: ColumnVector): Scalar
 
@@ -273,11 +278,36 @@ trait LinearAlgebraOps:
         @targetName("sumCV_Op")
         def sum: Scalar = sumCV(v)
 
+    def sumM(v: Matrix): Scalar
+
+    extension (v: Matrix)
+        @targetName("sumM_Op")
+        def sum: Scalar = sumM(v)
+
+    def elementWiseTimesMM(m1: Matrix, m2: Matrix): Matrix
+
+    extension (m: Matrix)
+        @targetName("elementWiseTimesMM_Op")
+        def *:*(m2: Matrix): Matrix = elementWiseTimesMM(m, m2)
+
+
+    def elementWiseTimesCVCV(v1: ColumnVector, v2: ColumnVector): ColumnVector
+        
+    extension (v: ColumnVector)
+        @targetName("elementWiseTimesCVCV_Op")
+        def *:*(v2: ColumnVector): ColumnVector = elementWiseTimesCVCV(v, v2)
+
     def elementWiseOpsM(m: Matrix, f: Scalar => Scalar): Matrix
 
     extension (m: Matrix)
         @targetName("elementWiseOpsM_Op")
         def map(f: Scalar => Scalar): Matrix = elementWiseOpsM(m, f)
+
+    def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix
+    
+    extension (m: Matrix)
+        @targetName("columnWiseOpsM_Op")
+        def mapColumns(f: ColumnVector => ColumnVector): Matrix = columnWiseOpsM(m, f)
 
     def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector
 
@@ -354,4 +384,23 @@ trait LinearAlgebraOps:
             m / c.toScalar
 
     def elementAtM(m: Matrix, rowI: Int, columnJ: Int): Scalar
+    def rowAtM(m: Matrix, rowI: Int): RowVector
+
+    def stackRows(rows: RowVector*): Matrix
+    def stackRowsSeq(rows: Seq[RowVector]): Matrix = stackRows(rows: _*)
+
+    extension (m: Matrix)
+        @targetName("elementAtM_Op")
+        def elementAt(rowI: Int, columnJ: Int): Scalar = elementAtM(m, rowI, columnJ)
+        @targetName("rowAtM_Op")
+        def rowAt(rowI: Int): RowVector = rowAtM(m, rowI)
+
+    def elementsCV(v: ColumnVector): Seq[Scalar] = 
+        for (i <- 0 until v.length) yield v.elementAt(i)
     def elementAtCV(v: ColumnVector, i: Int): Scalar
+
+    extension (v: ColumnVector)
+        @targetName("elementAtCV_Op")
+        def elementAt(i: Int): Scalar = elementAtCV(v, i)
+        @targetName("elementsCV_Op")
+        def elements: Seq[Scalar] = elementsCV(v)

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-api.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-auto-forward-mode.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-auto-forward-mode.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-auto-fractional.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-auto-fractional.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-auto-reverse-mode.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-auto-reverse-mode.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-auto-spire.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-auto-spire.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-build.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-linear-algebra-api.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-linear-algebra-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-linear-algebra-auto-breeze.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-linear-algebra-auto-breeze.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-linear-algebra-numerical-differentiation.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-linear-algebra-numerical-differentiation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-grad-numerical-differentiation.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-grad-numerical-differentiation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/showcase-deep-learning.iml" filepath="$PROJECT_DIR$/.idea/modules/showcase-deep-learning.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/showcase-probablistic-programming.iml" filepath="$PROJECT_DIR$/.idea/modules/showcase-probablistic-programming.iml" />
+    </modules>
+  </component>
+</project>

@@ -15,14 +15,27 @@ object DeriverLinearAlgebraNumerical:
         override type dfT = DenseVector[Double] => DenseVector[Double]
     }
 
-    trait DeriverMP[P] extends Deriver[DenseMatrix[P] => P] {
-        override type dfT = DenseMatrix[P] => DenseMatrix[P]
+    trait DeriverMP extends Deriver[DenseMatrix[Double] => Double] {
+        override type dfT = DenseMatrix[Double] => DenseMatrix[Double]
     }
 
     // Use central difference as default
     export CentralDifference.*
 
     object CentralDifference:
+
+        def approxMatrix(e: Double): DeriverMP = 
+            val halfE = e / 2d
+            new DeriverMP {
+                override def derive(f: DenseMatrix[Double] => Double): dfT = (xs) => 
+                    DenseMatrix.tabulate(xs.rows, xs.cols)((keyRow, keyCol) => 
+                        val xs2 = xs.copy
+                        xs2(keyRow, keyCol) = xs(keyRow, keyCol) + halfE
+                        val xs3 = xs.copy
+                        xs3(keyRow, keyCol) = xs(keyRow, keyCol) - halfE
+                        (f(xs2) - f(xs3)) / e
+                    )
+            }
 
         def approxVector(e: Double): DeriverVP = 
             val halfE = e / 2d

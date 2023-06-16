@@ -19,6 +19,8 @@ import scalagrad.linearalgebra.api.BreezeVectorAlgebraForDualDouble
 import scalagrad.linearalgebra.auto.reverse.dual.*
 import scalagrad.linearalgebra.auto.reverse.delta.*
 import DualDeltaScalar.{deltaLet => deltaLetScalar}
+import scalagrad.linearalgebra.auto.forward.dual.DualNumberScalar
+import scalagrad.linearalgebra.api.dual.DualScalar
 
 object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualDouble:
 
@@ -104,25 +106,35 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
     def timesDMCV(dm: MatrixD, v: DenseVector[Double]): ColumnVectorD = 
         for {
             dv <- dm
-            newId <- deltaLetColumnVector(DeltaColumnVector.MatrixDot(dv, v))
+            newId <- deltaLetColumnVector(DeltaColumnVector.MatrixDotDMCV(dv, v))
         } yield DeltaColumnVector.Val(newId)
 
     def timesMDCV(m: DenseMatrix[Double], dv: ColumnVectorD): ColumnVectorD = 
         for {
             dv <- dv
-            newId <- deltaLetColumnVector(DeltaColumnVector.MatrixDot2(m, dv))
+            newId <- deltaLetColumnVector(DeltaColumnVector.MatrixDotMDCV(m, dv))
         } yield DeltaColumnVector.Val(newId)
         
-    def addDCVDCV(dm1: ColumnVectorD, dm2: ColumnVectorD): ColumnVectorD = 
+    def addDCVDCV(dv1: ColumnVectorD, dv2: ColumnVectorD): ColumnVectorD = 
         for {
-            dm1 <- dm1
-            dm2 <- dm2
-            newId <- deltaLetColumnVector(DeltaColumnVector.AddVV(dm1, dm2))
+            dv1 <- dv1
+            dv2 <- dv2
+            newId <- deltaLetColumnVector(DeltaColumnVector.AddDCVDCV(dv1, dv2))
         } yield DeltaColumnVector.Val(newId)
 
 
-    def timesDMS(dm: MatrixD, s: Double): MatrixD = ???
-    def timesMDS(m: DenseMatrix[Double], ds: ScalarD): MatrixD = ???
+    def timesDMS(dm: MatrixD, s: Double): MatrixD = 
+        for {
+            dm <- dm
+            newId <- deltaLetMatrix(DeltaMatrix.MatrixDotDMS(dm, s))
+        } yield DeltaMatrix.Val(newId)
+
+    def timesMDS(m: DenseMatrix[Double], ds: ScalarD): MatrixD = 
+        for {
+            ds <- ds
+            newId <- deltaLetMatrix(DeltaMatrix.MatrixDotMDS(m, ds))
+        } yield DeltaMatrix.Val(newId)
+    
     def timesDCVRV(dv: ColumnVectorD, v: Transpose[DenseVector[Double]]): MatrixD =
         for {
             dv <- dv
@@ -138,13 +150,13 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
     def timesDCVS(dv: ColumnVectorD, s: Double): ColumnVectorD = 
         for {
             dv <- dv
-            newId <- deltaLetColumnVector(DeltaColumnVector.Scale(dv, s))
+            newId <- deltaLetColumnVector(DeltaColumnVector.MatrixDotDCVS(dv, s))
         } yield DeltaColumnVector.Val(newId)
 
     def timesCVDS(v: DenseVector[Double], ds: ScalarD): ColumnVectorD = 
         for {
             ds <- ds
-            newId <- deltaLetColumnVector(DeltaColumnVector.AddVS(DeltaColumnVector.Zero(v.length), ds))
+            newId <- deltaLetColumnVector(DeltaColumnVector.MatrixDotCVDS(v, ds))
         } yield DeltaColumnVector.Val(newId)
 
     def addDRVDRV(dv1: RowVectorD, dv2: RowVectorD): RowVectorD = 
@@ -154,8 +166,18 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetRowVector(DeltaRowVector.AddVV(dv1, dv2))
         } yield DeltaRowVector.Val(newId)
 
-    def timesDRVM(dv: RowVectorD, m: DenseMatrix[Double]): RowVectorD = ??? 
-    def timesRDMV(v: Transpose[DenseVector[Double]], dv: MatrixD): RowVectorD = ???
+    def timesDRVM(drv: RowVectorD, m: DenseMatrix[Double]): RowVectorD = 
+        for {
+            drv <- drv
+            newId <- deltaLetRowVector(DeltaRowVector.MatrixDotDRVM(drv, m))
+        } yield DeltaRowVector.Val(newId)
+
+    def timesRVDM(rv: Transpose[DenseVector[Double]], dm: MatrixD): RowVectorD = 
+        for {
+            dm <- dm
+            newId <- deltaLetRowVector(DeltaRowVector.MatrixDotRVDM(rv, dm))
+        } yield DeltaRowVector.Val(newId)    
+
     def addDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD = 
         for {
             ds1 <- ds1
@@ -175,8 +197,17 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetScalar(DeltaScalar.MultiplyRVDCV(v, dv))
         } yield DeltaScalar.Val(newId)
 
-    def timesDRVS(dv: RowVectorD, s: Double): RowVectorD = ???
-    def timesRVDS(v: Transpose[DenseVector[Double]], ds: ScalarD): RowVectorD = ???
+    def timesDRVS(dv: RowVectorD, s: Double): RowVectorD =  
+        for {
+            dv <- dv
+            newId <- deltaLetRowVector(DeltaRowVector.Scale(dv, s))
+        } yield DeltaRowVector.Val(newId)
+
+    def timesRVDS(v: Transpose[DenseVector[Double]], ds: ScalarD): RowVectorD =
+        for {
+            ds <- ds
+            newId <- deltaLetRowVector(DeltaRowVector.MatrixDotRVDS(v, ds))
+        } yield DeltaRowVector.Val(newId)
     def timesSDS(s: Double, ds: ScalarD): ScalarD = 
         for {
             ds <- ds
@@ -190,8 +221,18 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetMatrix(DeltaMatrix.AddDMDCV(dm, dv))
         } yield DeltaMatrix.Val(newId)
 
-    def addDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = ???
-    def addDMDS(dm: MatrixD, ds: ScalarD): MatrixD = ???
+    def addDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = for {
+            dm <- dm
+            dv <- dv
+            newId <- deltaLetMatrix(DeltaMatrix.AddDMDRV(dm, dv))
+        } yield DeltaMatrix.Val(newId)
+    def addDMDS(dm: MatrixD, ds: ScalarD): MatrixD = 
+        for {
+            dm <- dm
+            ds <- ds
+            newId <- deltaLetMatrix(DeltaMatrix.AddDMDS(dm, ds))
+        } yield DeltaMatrix.Val(newId)
+
     def addDCVDS(dv: ColumnVectorD, ds: ScalarD): ColumnVectorD = 
         for {
             dv <- dv
@@ -199,11 +240,42 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetColumnVector(DeltaColumnVector.AddVS(dv, ds))
         } yield DeltaColumnVector.Val(newId)
 
-    def addDRVDS(dv: RowVectorD, ds: ScalarD): RowVectorD = ???
-    def subDMDM(dm1: MatrixD, dm2: MatrixD): MatrixD = ???
-    def subDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = ??? 
-    def subDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = ???
-    def subDMDS(dm: MatrixD, ds: ScalarD): MatrixD = ???
+    def addDRVDS(dv: RowVectorD, ds: ScalarD): RowVectorD =
+        for {
+            dv <- dv
+            ds <- ds
+            newId <- deltaLetRowVector(DeltaRowVector.AddDRVDS(dv, ds))
+        } yield DeltaRowVector.Val(newId)
+
+    def subDMDM(dm1: MatrixD, dm2: MatrixD): MatrixD = 
+        for {
+            dm1 <- dm1
+            dm2 <- dm2
+            newId <- deltaLetMatrix(DeltaMatrix.MinusDMDM(dm1, dm2))
+        } yield DeltaMatrix.Val(newId)
+        
+    def subDMDCV(dm: MatrixD, dcv: ColumnVectorD): MatrixD = 
+        for {
+            dm <- dm
+            dcv <- dcv
+            newId <- deltaLetMatrix(DeltaMatrix.MinusDMDCV(dm, dcv))
+        } yield DeltaMatrix.Val(newId)
+
+    def subDMDRV(dm: MatrixD, drv: RowVectorD): MatrixD = 
+        for {
+            dm <- dm
+            drv <- drv
+            newId <- deltaLetMatrix(DeltaMatrix.MinusDMDRV(dm, drv))
+        } yield DeltaMatrix.Val(newId)    
+
+    def subDMDS(dm: MatrixD, ds: ScalarD): MatrixD = 
+        for {
+            dm <- dm
+            ds <- ds
+            newId <- deltaLetMatrix(DeltaMatrix.MinusDMDS(dm, ds))
+        } yield DeltaMatrix.Val(newId)    
+
+
     def subDCVDCV(dv1: ColumnVectorD, dv2: ColumnVectorD): ColumnVectorD = 
         for {
             dv1 <- dv1
@@ -211,9 +283,26 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetColumnVector(DeltaColumnVector.MinusVV(dv1, dv2))
         } yield DeltaColumnVector.Val(newId)
 
-    def subDCVDS(dv: ColumnVectorD, ds: ScalarD): ColumnVectorD = ???
-    def subDRVDRV(dv1: RowVectorD, dv2: RowVectorD): RowVectorD = ???
-    def subDRVDS(dv: RowVectorD, ds: ScalarD): RowVectorD = ???
+    def subDCVDS(dv: ColumnVectorD, ds: ScalarD): ColumnVectorD = 
+        for {
+            dv <- dv
+            ds <- ds
+            newId <- deltaLetColumnVector(DeltaColumnVector.MinusVS(dv, ds))
+        } yield DeltaColumnVector.Val(newId)
+        
+    def subDRVDRV(dv1: RowVectorD, dv2: RowVectorD): RowVectorD =
+        for {
+            dv1 <- dv1
+            dv2 <- dv2
+            newId <- deltaLetRowVector(DeltaRowVector.MinusDRVDRV(dv1, dv2))
+        } yield DeltaRowVector.Val(newId)
+    def subDRVDS(dv: RowVectorD, ds: ScalarD): RowVectorD = 
+        for {
+            dv <- dv
+            ds <- ds
+            newId <- deltaLetRowVector(DeltaRowVector.MinusDRVDS(dv, ds))
+        } yield DeltaRowVector.Val(newId)    
+
     def subDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD = 
         for {
             ds1 <- ds1
@@ -221,13 +310,22 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetScalar(DeltaScalar.Sub(ds1, ds2))
         } yield DeltaScalar.Val(newId)
 
-    def divideDMS(dm: MatrixD, s: Double): MatrixD = ???
+    def divideDMS(dm: MatrixD, s: Double): MatrixD = 
+        for {
+            dm <- dm
+            newId <- deltaLetMatrix(DeltaMatrix.Div(dm, s))
+        } yield DeltaMatrix.Val(newId)
+
     def divideDCVS(dv: ColumnVectorD, s: Double): ColumnVectorD = 
         for {
             dv <- dv
             newId <- deltaLetColumnVector(DeltaColumnVector.Div(dv, s))
         } yield DeltaColumnVector.Val(newId)
-    def divideDRVS(dv: RowVectorD, s: Double): RowVectorD = ???
+    def divideDRVS(dv: RowVectorD, s: Double): RowVectorD =
+        for {
+            dv <- dv
+            newId <- deltaLetRowVector(DeltaRowVector.Div(dv, s))
+        } yield DeltaRowVector.Val(newId)
     def divideDSS(ds: ScalarD, s: Double): ScalarD = 
         for {
             ds <- ds
@@ -238,6 +336,12 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
         for {
             dv <- dv
             newId <- deltaLetScalar(DeltaScalar.Sum(dv, vLength))
+        } yield DeltaScalar.Val(newId)
+
+    override def sumDM(dm: MatrixD, nRows: Int, nCols: Int): ScalarD = 
+        for {
+            dm <- dm
+            newId <- deltaLetScalar(DeltaScalar.SumM(dm, nRows, nCols))
         } yield DeltaScalar.Val(newId)
 
     def timesElementWiseMDM(m1: DenseMatrix[Double], dm2: MatrixD): MatrixD = 
@@ -252,24 +356,41 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetColumnVector(DeltaColumnVector.ElementWiseScale(v1, dv2))
         } yield DeltaColumnVector.Val(newId)
 
-    def timesElementWiseRVDRV(v1: Transpose[DenseVector[Double]], dv2: RowVectorD): RowVectorD = ???
+    def timesElementWiseRVDRV(v1: Transpose[DenseVector[Double]], dv2: RowVectorD): RowVectorD = 
+        for {
+            dv2 <- dv2
+            newId <- deltaLetRowVector(DeltaRowVector.ElementWiseScale(v1, dv2))
+        } yield DeltaRowVector.Val(newId)
 
-    override def reduceCV(v: ColumnVector)(f: [T] => (T, T) => Numeric[T] ?=> T): Scalar =
-        def reduceF[T: Numeric](v: Vector[T]): T = 
-            v.reduce(f[T])
-        import scalagrad.auto.reverse.DeriverReversePlan.given
-        val dReduceF = ScalaGrad.derive(reduceF[DualDelta[Double]])
-        val res = dReduceF(v.v.toScalaVector)
-        DualDeltaScalar(
-            v.v.reduce(f[Double]), 
-            timesRVDCV(DenseVector(res.toArray).t, v.dv)
-        )
+    override def foldLeftCV(s: Scalar)(v: ColumnVector)(f: (Scalar, Scalar) => Scalar): Scalar =
+        var current = s
+        for(i <- 0 until v.length)
+            f(current, v.elementAt(i))
+        current
+
+    override def elementWiseTimesMDM(m: DenseMatrix[Double], dm: MatrixD): MatrixD = 
+        for {
+            dm <- dm
+            newId <- deltaLetMatrix(DeltaMatrix.ElementWiseScale(m, dm))
+        } yield DeltaMatrix.Val(newId)
+
+    override def elementWiseTimesCVDCV(v: DenseVector[Double], dv: ColumnVectorD): ColumnVectorD = 
+        for {
+            dv <- dv
+            newId <- deltaLetColumnVector(DeltaColumnVector.ElementWiseScale(v, dv))
+        } yield DeltaColumnVector.Val(newId)
 
     def elementAtDM(dm: MatrixD, iRow: Int, jCol: Int, nRows: Int, nCols: Int): ScalarD = 
         for {
             dm <- dm
             newId <- deltaLetScalar(DeltaScalar.ElementAtM(dm, iRow, jCol, nRows, nCols))
         } yield DeltaScalar.Val(newId)
+
+    override def rowAtDM(dm: MatrixD, rowI: Int, nRows: Int, nCols: Int): RowVectorD = 
+        for {
+            dm <- dm
+            newId <- deltaLetRowVector(DeltaRowVector.RowAtM(dm, rowI, nRows, nCols))
+        } yield DeltaRowVector.Val(newId)
 
     override def elementAtDCV(dv: ColumnVectorD, index: Int, length: Int): ScalarD = 
         for {
@@ -283,162 +404,49 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             newId <- deltaLetScalar(DeltaScalar.ElementAtRV(dv, index, length))
         } yield DeltaScalar.Val(newId)
 
-    def traverse(x: List[DualDeltaScalar[Double]]): DeltaMonad[Double, List[DeltaScalar[Double]]] =
-        x.foldLeft(DeltaMonad[Double, List[DeltaScalar[Double]]](state => (state, List.empty[DeltaScalar[Double]])))((acc, x) => 
-            for {
-                xs <- acc
-                x <- x.dv
-            } yield x :: xs
-        )
-
-    override def elementWiseOpsM(m: Matrix, f: Scalar => Scalar): Matrix = 
-        val x = for {
-            row <- (0 until m.rows)
-            col <- (0 until m.cols)
-        } yield f(elementAtM(m, row, col))
-
-        val xs = traverse(x.toList)
-            
+    override def elementWiseOpsM(m: Matrix, f: Scalar => Scalar): Matrix =
         createMatrix(
-            new DenseMatrix(m.rows, m.cols, x.map(_.v).toArray),
+            new DenseMatrix(m.rows, m.cols, m.v.map(x => f(DualDeltaScalar(x, DeltaMonad.zeroS)).v).toArray),
             for {
                 dm <- m.dv
-                xs <- xs
-                xx <- deltaLetMatrix(
-                    DeltaMatrix.FromElements(xs.toVector)
-                )
-            } yield DeltaMatrix.Val(xx)
+                id <- deltaLetMatrix(DeltaMatrix.ElementWiseOps(m.v, dm, f))
+            } yield DeltaMatrix.Val(id)
         )
 
-    override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector = 
-        val x = (0 until v.v.length).map(i => 
-            f(elementAtCV(v, i))
-        ).toList
-        val xs = traverse(x)
-        createColumnVector(
-            DenseVector(x.map(_.v).toArray),
+    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix =
+        createMatrix(
+            new DenseMatrix(m.rows, m.cols, m.v.toArray),
             for {
-                xs <- xs
-                xx <- deltaLetColumnVector(
-                    DeltaColumnVector.FromElements(xs.toVector)
-                )
-            } yield DeltaColumnVector.Val(xx)
+                dm <- m.dv
+            } yield DeltaMatrix.ColumnWiseOps(m.v, dm, f)
         )
         
-    override def elementWiseOpsRV(v: DualDeltaRowVector[Double], f: Scalar => Scalar): RowVector =
-        val x = (0 until v.v.inner.length).map(i => 
-            f(elementAtRV(v, i))
-        ).toList
-        val xs = traverse(x)
-        createRowVector(
-            Transpose(DenseVector(x.map(_.v).toArray)),
+    def elementWiseOpsMForward(m: Matrix, f: DualNumberScalar[Double] => DualNumberScalar[Double]): Matrix =
+        createMatrix(
+            new DenseMatrix(m.rows, m.cols, m.v.map(x => f(DualNumberScalar(x, 0.0)).v).toArray),
             for {
-                dv <- v.dv
-                xs <- xs
-                xx <- deltaLetRowVector(
-                    DeltaRowVector.FromElements(xs.toVector)
-                )
-            } yield DeltaRowVector.Val(xx)
+                dm <- m.dv
+            } yield DeltaMatrix.ElementWiseOpsForward(m.v, dm, f)
         )
 
-/*
+    override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector =
+        createColumnVector(
+            DenseVector(v.v.toArray.map(x => f(DualDeltaScalar(x, DeltaMonad.zeroS)).v)),
+            for {
+                dv <- v.dv
+            } yield DeltaColumnVector.ElementWiseOps(v.v, dv, f)
+        )
+       
+    override def elementWiseOpsRV(v: RowVector, f: Scalar => Scalar): RowVector =
+        createRowVector(
+            Transpose(DenseVector(v.v.inner.toArray.map(x => f(DualDeltaScalar(x, DeltaMonad.zeroS)).v))),
+            for {
+                dv <- v.dv
+            } yield DeltaRowVector.ElementWiseOps(v.v, dv, f)
+        )
 
-object BreezeVectorAlgebraForDualDeltaDouble extends LinearAlgebraOps:
-    
-    override type Scalar = DualScalar[Double]
-    override type ColumnVector = DualColumnVector[Double]
-    override type RowVector = DualRowVector[Double]
-    override type Matrix = DualMatrix[Double]
-
-    override def nRows(m: Matrix): Int = m.value.rows
-    override def nCols(m: Matrix): Int = m.value.cols
-    override def lengthColumnVector(v: ColumnVector): Int = v.value.length
-    override def lengthRowVector(v: RowVector): Int = v.value.inner.length
-
-    override def liftToScalar(d: Int): Scalar = DualScalar(d.toDouble, DeltaScalar.Zero(0.0))
-
-    override def inverse(m: Matrix): Matrix = ???
-
-    override def determinant(m: Matrix): Scalar = ???
-
-    override def transpose(m: Matrix): Matrix = 
-        DualMatrix(m.value.t, DeltaMatrix.Transpose(m.delta))
-
-    override def transposeColumVector(v: ColumnVector): RowVector =
-        DualRowVector(v.value.t, DeltaRowVector.Transpose(v.delta))
-
-    override def transposeRowVector(v: RowVector): ColumnVector =
-        DualColumnVector(v.value.t, DeltaColumnVector.Transpose(v.delta))
-    
-    override def timesMM(m1: Matrix, m2: Matrix): Matrix =
-        def dTimes(v: DenseMatrix[Double], dv: DeltaMatrix[Double], v2: DenseMatrix[Double], dv2: DeltaMatrix[Double]): DeltaMatrix[Double] =
-            DeltaMatrix.MatrixDot2(dv, v2) + DeltaMatrix.MatrixDot(v, dv2)
-        DualMatrix(m1.value * m2.value, dTimes(m1.value, m1.delta, m2.value, m2.delta))
-    
-    override def timesMCV(m: Matrix, v: ColumnVector): ColumnVector = 
-        def dTimes(v1: DenseMatrix[Double], dv1: DeltaMatrix[Double], v2: DenseVector[Double], dv2: DeltaColumnVector[Double]): DeltaColumnVector[Double] =
-            DeltaColumnVector.AddVV(
-                DeltaColumnVector.MatrixDot(dv1, v2), 
-                DeltaColumnVector.MatrixDot2(v1, dv2)
-            )
-        DualColumnVector(m.value * v.value, dTimes(m.value, m.delta, v.value, v.delta))
-    
-    override def timesMS(m: Matrix, s: Scalar): Matrix = ???
-     
-    override def timesCVRV(v1: ColumnVector, v2: RowVector): Matrix =
-        def dTimes(v1: DenseVector[Double], dv1: DeltaColumnVector[Double], v2: Transpose[DenseVector[Double]], dv2: DeltaRowVector[Double]): DeltaMatrix[Double] =
-            DeltaMatrix.MatrixDot4(v1, dv2) + DeltaMatrix.MatrixDot3(dv1, v2)
-        DualMatrix(v1.value * v2.value, dTimes(v1.value, v1.delta, v2.value, v2.delta))    
-
-    override def timesCVS(v: ColumnVector, s: Scalar): ColumnVector = ???
-
-    override def timesRVM(v: RowVector, m: Matrix): RowVector = ???
-    override def timesRVCV(v1: RowVector, v2: ColumnVector): Scalar = ???
-    override def timesRVS(v: RowVector, s: Scalar): RowVector = ???
-
-    override def timesSS(s1: Scalar, s2: Scalar): Scalar = ???
-
-    override def plusMM(m1: Matrix, m2: Matrix): Matrix = ???
-    override def plusMCV(m: Matrix, v: ColumnVector): Matrix = ???
-    override def plusMRV(m: Matrix, v: RowVector): Matrix = ???
-    override def plusMS(m: Matrix, s: Scalar): Matrix = ???
-
-    override def plusCVCV(v1: ColumnVector, v2: ColumnVector): ColumnVector = ???
-    override def plusCVS(v: ColumnVector, s: Scalar): ColumnVector = ???
-
-    override def plusRVRV(v1: RowVector, v2: RowVector): RowVector = ???
-    override def plusRVS(v: RowVector, s: Scalar): RowVector = ???
-      
-    override def plusSS(s1: Scalar, s2: Scalar): Scalar = ???
-
-    override def minusMM(m1: Matrix, m2: Matrix): Matrix = ???
-    override def minusMCV(m: Matrix, v: ColumnVector): Matrix = ???
-    override def minusMRV(m: Matrix, v: RowVector): Matrix = ???
-    override def minusMS(m: Matrix, s: Scalar): Matrix = ???
-
-    override def minusCVCV(v1: ColumnVector, v2: ColumnVector): ColumnVector = ???
-    override def minusCVS(v: ColumnVector, s: Scalar): ColumnVector = ???
-    
-    override def minusRVRV(v1: RowVector, v2: RowVector): RowVector = ???
-    override def minusRVS(v: RowVector, s: Scalar): RowVector = ???
-
-    override def minusSS(s1: Scalar, s2: Scalar): Scalar = ???
-
-    override def divideMS(m: Matrix, s: Scalar): Matrix = ???
-    
-    override def divideCVS(v: ColumnVector, s: Scalar): ColumnVector = ???
-    
-    override def divideRVS(v: RowVector, s: Scalar): RowVector = ???
-
-    override def divideSS(s1: Scalar, s2: Scalar): Scalar = ???
-
-    override def sumCV(v: ColumnVector): Scalar = ???
-
-    override def elementWiseOpsM(v: Matrix, f: [T] => T => Numeric[T] ?=> T): Matrix = ???
-
-    override def elementWiseOpsCV(v: ColumnVector, f: [T] => T => Numeric[T] ?=> T): ColumnVector = ???
-
-    override def elementWiseOpsRV(v: RowVector, f: [T] => T => Numeric[T] ?=> T): RowVector = ???
-
-    override def applyToScalar(s: Scalar, f: [T] => T => Numeric[T] ?=> T): Scalar = ???
-*/
+    def stackDRows(rows: RowVectorD*): MatrixD = 
+        for {
+            rows <- DeltaMonad.traverse(rows.toList)
+            newId <- deltaLetMatrix(DeltaMatrix.StackDRows(rows))
+        } yield DeltaMatrix.Val(newId)

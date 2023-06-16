@@ -20,11 +20,12 @@ import spire.implicits.*
 import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan
 import scalagrad.auto.reverse.DeriverReversePlan.given
 import scalagrad.linearalgebra.auto.reverse.BreezeVectorAlgebraForDualDeltaDouble
-
+import scalagrad.spire.auto.dual.DualIsNumeric.given
 import breeze.linalg.DenseVector
 
 class BreezeReverseLinearAlgebraBasicTests extends LinearAlgebraBasicTests(
   "reverse-mode",
   BreezeVectorAlgebraForDualDeltaDouble,
+  DeriverBreezeReversePlan.matrix2Scalar,
   DeriverBreezeReversePlan.vector2Scalar
 )

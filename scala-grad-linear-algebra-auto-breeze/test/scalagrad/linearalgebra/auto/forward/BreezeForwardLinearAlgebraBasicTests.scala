@@ -19,6 +19,7 @@ import spire.math.Numeric
 import spire.implicits.*
 import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan
 import scalagrad.auto.forward.DeriverForwardPlan.given
+import scalagrad.spire.auto.dual.DualIsNumeric.given
 import scalagrad.linearalgebra.auto.forward.BreezeVectorAlgebraForDualNumberDouble
 
 import breeze.linalg.DenseVector
@@ -26,5 +27,6 @@ import breeze.linalg.DenseVector
 class BreezeForwardLinearAlgebraBasicTests extends LinearAlgebraBasicTests(
   "forward-mode",
   BreezeVectorAlgebraForDualNumberDouble,
+  DeriverBreezeForwardPlan.matrix2Scalar,
   DeriverBreezeForwardPlan.vector2Scalar
 )

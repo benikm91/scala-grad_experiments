@@ -35,6 +35,8 @@ class ScalaLinearAlgebraOpsFor[P: Fractional]() extends LinearAlgebraOps:
     override def liftToScalar(d: Int): Scalar = summon[Fractional[Scalar]].fromInt(d)
     override def liftToScalar(d: Double): Scalar = ???
 
+    override def scalarToDouble(s: Scalar) = summon[Fractional[Scalar]].toDouble(s)
+
     override def transpose(m: Matrix): Matrix = m.transpose
 
     override def transposeColumVector(v: ColumnVector): RowVector = v 
@@ -144,14 +146,25 @@ class ScalaLinearAlgebraOpsFor[P: Fractional]() extends LinearAlgebraOps:
     override def divideSS(s1: Scalar, s2: Scalar): Scalar =
         summon[Fractional[Scalar]].div(s1, s2)
         
-    override def reduceCV(v: ColumnVector)(f: [T] => (T, T) => Numeric[T] ?=> T): Scalar =
-        v.reduce((a, b) => f[P](a, b))
+    override def foldLeftCV(s: Scalar)(v: ColumnVector)(f: (Scalar, Scalar) => Scalar): Scalar =
+        v.foldLeft(s)((a, b) => f(a, b))
 
     override def sumCV(v: ColumnVector): Scalar = v.sum
+
+    override def sumM(v: Matrix): Scalar = v.flatten.sum
+
+    override def elementWiseTimesMM(m1: Matrix, m2: Matrix): Matrix = 
+        m1.zip(m2).map((row1, row2) => row1.zip(row2).map((a, b) => a * b))    
+
+    override def elementWiseTimesCVCV(v1: ColumnVector, v2: ColumnVector): ColumnVector = 
+        v1.zip(v2).map((a, b) => a * b)
 
     override def elementWiseOpsM(v: Matrix, f: Scalar => Scalar): Matrix = 
         v.map(row => row.map(a => f(a)))
 
+    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix = 
+        m.transpose.map(col => f(col).toVector)
+    
     override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector =
         v.map(a => f(a))
 
@@ -159,5 +172,8 @@ class ScalaLinearAlgebraOpsFor[P: Fractional]() extends LinearAlgebraOps:
         v.map(a => f(a))
 
     override def elementAtM(m: Matrix, rowI: Int, columnJ: Int): Scalar = m(rowI)(columnJ)
+    def rowAtM(m: Matrix, rowI: Int): RowVector = m(rowI)
 
     override def elementAtCV(v: ColumnVector, i: Int): Scalar = v(i)
+
+    def stackRows(rows: RowVector*): Matrix = rows.toVector

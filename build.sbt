@@ -11,7 +11,7 @@ lazy val scalismoDependency = Seq(
 
 lazy val scaltirDependency = Seq(
       resolvers +=  Resolver.sonatypeRepo("snapshots"), 
-      libraryDependencies += "ch.unibas.cs.gravis" %% "scaltair" % "0.1-SNAPSHOT"
+      libraryDependencies += "ch.unibas.cs.gravis" %% "scaltair" % "0.1-SNAPSHOT" changing()
 )
 
 lazy val scalaTestSettings = Seq(

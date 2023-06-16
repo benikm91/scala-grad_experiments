@@ -31,6 +31,8 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
     override def liftToScalar(d: Int): Scalar = d.toDouble
     override def liftToScalar(d: Double): Scalar = d
 
+    override def scalarToDouble(s: Scalar) = s
+
     override def inverse(m: Matrix): Matrix = ???
 
     override def determinant(m: Matrix): Scalar = ???
@@ -58,8 +60,9 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
     override def timesSS(s1: Scalar, s2: Scalar): Scalar = s1 * s2
 
     override def plusMM(m1: Matrix, m2: Matrix): Matrix = m1 + m2
-    override def plusMCV(m: Matrix, v: ColumnVector): Matrix = m(breeze.linalg.*, ::) + v
-    override def plusMRV(m: Matrix, v: RowVector): Matrix = m(::, breeze.linalg.*) + v.t
+    override def plusMCV(m: Matrix, v: ColumnVector): Matrix = 
+        m(::, breeze.linalg.*) + v
+    override def plusMRV(m: Matrix, v: RowVector): Matrix = m(breeze.linalg.*, ::) + v.t
     override def plusMS(m: Matrix, s: Scalar): Matrix = m + s
 
     override def plusCVM(v: ColumnVector, m: Matrix): Matrix = plusMCV(m, v)
@@ -76,8 +79,8 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
     override def plusSS(s1: Scalar, s2: Scalar): Scalar = s1 + s2
 
     override def minusMM(m1: Matrix, m2: Matrix): Matrix = m1 - m2
-    override def minusMCV(m: Matrix, v: ColumnVector): Matrix = m(breeze.linalg.*, ::) - v
-    override def minusMRV(m: Matrix, v: RowVector): Matrix = m(::, breeze.linalg.*) - v.t
+    override def minusMCV(m: Matrix, v: ColumnVector): Matrix = m(::, breeze.linalg.*) - v
+    override def minusMRV(m: Matrix, v: RowVector): Matrix = m(breeze.linalg.*, ::) - v.t
     override def minusMS(m: Matrix, s: Scalar): Matrix = m - s
 
     override def minusCVM(v: ColumnVector, m: Matrix): Matrix = minusMCV(m, v)
@@ -104,14 +107,21 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
     override def divideSRV(s: Scalar, v: RowVector): RowVector = divideRVS(v, s)
     override def divideSS(s1: Scalar, s2: Scalar): Scalar = s1 / s2
 
-    override def reduceCV(v: ColumnVector)(f: [T] => (T, T) => Numeric[T] ?=> T): Scalar =
-        v.reduce(f[Double])    
+    override def foldLeftCV(s: Scalar)(v: ColumnVector)(f: (Scalar, Scalar) => Scalar): Scalar =
+        v.foldLeft(s)(f)
 
     override def sumCV(v: ColumnVector): Scalar = breeze.linalg.sum(v)
 
-    override def elementWiseOpsM(v: Matrix, f: Scalar => Scalar): Matrix = 
-        v.map(f)
+    override def sumM(m: Matrix): Scalar = breeze.linalg.sum(m)
 
+    override def elementWiseTimesMM(m1: Matrix, m2: Matrix): Matrix = m1 *:* m2
+    override def elementWiseTimesCVCV(v1: ColumnVector, v2: ColumnVector): ColumnVector = v1 *:* v2
+
+    override def elementWiseOpsM(m: Matrix, f: Scalar => Scalar): Matrix = 
+        m.map(f)
+
+    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix = ???
+    
     override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector =
         v.map(f)
 
@@ -119,5 +129,9 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
         v.t.map(f).t
 
     override def elementAtCV(v: DenseVector[Double], i: Int): Scalar = v(i)
+    def rowAtM(m: Matrix, rowI: Int): RowVector = m(rowI, ::)
 
     override def elementAtM(m: DenseMatrix[Double], i: Int, j: Int): Scalar = m(i, j)
+
+    override def stackRows(rows: RowVector*): Matrix = 
+        DenseMatrix.vertcat(rows.map(_.t.toDenseMatrix): _*)

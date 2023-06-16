@@ -33,6 +33,16 @@ object DeltaMonad:
     def zeroM: DeltaMonad[Double, DeltaMatrix[Double]] =
         DeltaMonad(state => (state, DeltaMatrix.Zero(0d)))
 
+    def pure[P, A](a: A): DeltaMonad[P, A] = DeltaMonad(state => (state, a))
+
+    def traverse[A, B](as: List[DeltaMonad[Double, A]]): DeltaMonad[Double, List[A]] =
+        as.foldRight(pure[Double, List[A]](List()))((a, acc) => 
+            for {
+                x <- a
+                xs <- acc
+            } yield x :: xs
+        )
+        
 
 type DeltaId = Int
 type DeltaBindings[P] = List[(DeltaId, Deltas[P])]

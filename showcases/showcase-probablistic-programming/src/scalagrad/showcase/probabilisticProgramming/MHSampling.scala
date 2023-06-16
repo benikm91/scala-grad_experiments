@@ -132,8 +132,8 @@ object MHSampling extends App {
         val data = Data.fromRows(dataMap)
         val plot = Chart(data)
             .encode(
-                Channel.X("x1", FieldType.Quantitative),
-                Channel.Y("x2", FieldType.Quantitative),
+                Channel.X("x1", FieldType.Quantitative), // .scale(Scale.withRange(-50 to 50)),
+                Channel.Y("x2", FieldType.Quantitative), // .scale(Scale.withRange(-50 to 50)),
             )
             .markCircle()
             .properties(

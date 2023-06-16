@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <profile name="sbt 1" modules="scala-grad,scala-grad-api,scala-grad-auto-forward-mode,scala-grad-auto-fractional,scala-grad-auto-reverse-mode,scala-grad-auto-spire,scala-grad-linear-algebra-api,scala-grad-linear-algebra-auto-breeze,scala-grad-linear-algebra-numerical-differentiation,scala-grad-main_3121,scala-grad-numerical-differentiation,showcase-deep-learning,showcase-probablistic-programming" />
+  </component>
+</project>

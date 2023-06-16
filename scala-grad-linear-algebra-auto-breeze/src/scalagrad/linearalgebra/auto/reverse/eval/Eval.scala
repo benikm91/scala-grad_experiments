@@ -68,6 +68,10 @@ object Eval:
                 evalColumnVector(
                     DenseVector.fill(vectorLength)(output), d, input
                 )
+            case DeltaScalar.SumM(d: DeltaMatrix[Double], nRows: Int, nCols: Int) =>
+                evalMatrix(
+                    DenseMatrix.fill(nRows, nCols)(output), d, input
+                )
             case DeltaScalar.Sub(d1: DeltaScalar[Double], d2: DeltaScalar[Double]) =>
                 evalScalar(output, d1, 
                     evalScalar(-output, d2, input)
@@ -124,17 +128,19 @@ object Eval:
                 evalDeltas(id, rhs, nextInput)
             case DeltaColumnVector.Transpose(d) => 
                 evalRowVector(output.t, d, input)
-            case DeltaColumnVector.MatrixDot(d, v) =>
-                evalMatrix(output * v.t, d, input)
-            case DeltaColumnVector.MatrixDot2(v, d) =>
-                evalColumnVector(v.t * output, d, input)
-            case DeltaColumnVector.Scale(d, f) =>
+            case DeltaColumnVector.MatrixDotDMCV(dm, cv) =>
+                evalMatrix(output * cv.t, dm, input)
+            case DeltaColumnVector.MatrixDotMDCV(m, dcv) =>
+                evalColumnVector(m.t * output, dcv, input)
+            case DeltaColumnVector.MatrixDotDCVS(d, f) =>
                 evalColumnVector(output * f, d, input)
+            case DeltaColumnVector.MatrixDotCVDS(cv, ds) =>
+                evalScalar(breeze.linalg.sum(output *:* cv), ds, input)
             case DeltaColumnVector.Div(d, f) =>
                 evalColumnVector(output / f, d, input)
-            case DeltaColumnVector.AddVV(d1, d2) => 
-                evalColumnVector(output, d1, 
-                    evalColumnVector(output, d2, input)
+            case DeltaColumnVector.AddDCVDCV(dcv1, dcv2) => 
+                evalColumnVector(output, dcv1, 
+                    evalColumnVector(output, dcv2, input)
                 )
             case DeltaColumnVector.AddVS(d, s) =>
                 evalColumnVector(output, d, 
@@ -146,6 +152,12 @@ object Eval:
                 evalColumnVector(output, d1, 
                     evalColumnVector(-output, d2, input)
                 )
+            case DeltaColumnVector.MinusVS(dv, ds) =>
+                evalColumnVector(output, dv, 
+                    output.foldLeft(input)((input, outputScalar) => 
+                        evalScalar(-outputScalar, ds, input)
+                    )
+                )
             case DeltaColumnVector.ElementWiseScale(v, d) =>
                 evalColumnVector(output *:* v, d, input)
             case DeltaColumnVector.FromElements(values) =>
@@ -153,6 +165,10 @@ object Eval:
                     val (dScalar, index) = t
                     evalScalar(output(index), dScalar, input)
                 )
+            case DeltaColumnVector.ElementWiseOps(v, d, op) =>
+                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
+                val dOps = scalar2Scalar.derive(op) // TODO fix: Here a new "context" is opened. But op can depend on Values of current context...
+                evalColumnVector(output *:*  v.map(dOps), d, input)
 
     def evalRowVector(output: Transpose[DenseVector[Double]], delta: DeltaRowVector[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
         delta match
@@ -169,14 +185,53 @@ object Eval:
                 evalDeltas(id, rhs, nextInput)
             case DeltaRowVector.Transpose(d) => 
                 evalColumnVector(output.t, d, input)
-            case DeltaRowVector.MatrixDot(v, d) =>
-                evalMatrix(v.t * output, d, input)
-            case DeltaRowVector.MatrixDot2(d, v) =>
-                evalRowVector(output * v, d, input)
-            case DeltaRowVector.AddVV(d1, d2) => 
-                evalRowVector(output, d1, 
-                    evalRowVector(output, d2, input)
+            case DeltaRowVector.Scale(d, f) =>
+                evalRowVector(output * f, d, input)
+            case DeltaRowVector.MatrixDotRVDM(rv, dm) =>
+                evalMatrix(rv.t * output, dm, input)
+            case DeltaRowVector.MatrixDotDRVM(drv, m) =>
+                evalRowVector(output * m.t, drv, input)
+            case DeltaRowVector.MatrixDotRVDS(rv, ds) =>
+                evalScalar(breeze.linalg.sum(output), ds, input)
+            case DeltaRowVector.ElementWiseScale(v, d) =>
+                evalRowVector(output *:* v, d, input)
+            case DeltaRowVector.AddVV(drv1, drv2) => 
+                evalRowVector(output, drv1, 
+                    evalRowVector(output, drv2, input)
                 )
+            case DeltaRowVector.AddDRVDS(drv, ds) =>
+                evalRowVector(output, drv, 
+                    evalScalar(breeze.linalg.sum(output), ds, input)
+                )
+            case DeltaRowVector.MinusDRVDRV(drv1, drv2) =>
+                evalRowVector(output, drv1, 
+                    evalRowVector(-output, drv2, input)
+                )
+            case DeltaRowVector.MinusDRVDS(drv, ds) =>
+                evalRowVector(output, drv, 
+                    evalScalar(-breeze.linalg.sum(output), ds, input)
+                )
+            case DeltaRowVector.Div(drv, f) =>
+                evalRowVector(output / f, drv, input)
+            case DeltaRowVector.FromElements(values) =>
+                values.zipWithIndex.foldLeft(input)((input, t) => 
+                    val (dScalar, index) = t
+                    evalScalar(output(index), dScalar, input)
+                )
+            case DeltaRowVector.RowAtM(dm, row, nRows, nCols) =>
+                val id = dm.asInstanceOf[DeltaMatrix.Val[Double]].id
+                input.copy(
+                    matrices = 
+                        input.matrices.updatedWith(id)(ov => 
+                            val v = ov.getOrElse(DenseMatrix.zeros[Double](nRows, nCols))
+                            v(row, ::) += output
+                            Some(v)
+                        )
+                )
+            case DeltaRowVector.ElementWiseOps(v, d, op) =>
+                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
+                val dOps = scalar2Scalar.derive(op)
+                evalRowVector(output *:* v.inner.map(dOps).t, d, input)
 
 
     def evalMatrix(output: DenseMatrix[Double], delta: DeltaMatrix[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
@@ -196,30 +251,70 @@ object Eval:
                 evalMatrix(output, m1, 
                     evalMatrix(output, m2, input)
                 )
-            case DeltaMatrix.AddDMDCV(m, v) =>
+            case DeltaMatrix.AddDMDCV(m, dcv) =>
                 evalMatrix(output, m, 
-                    output(*, ::).foldLeft(input)((input, outputVector) => 
-                        evalColumnVector(outputVector, v, input)
+                    evalColumnVector(breeze.linalg.sum(output(*, ::)), dcv, input)
+                )
+            case DeltaMatrix.AddDMDRV(m, v) =>
+                evalMatrix(output, m, 
+                    evalRowVector(
+                        breeze.linalg.sum(output(::, *)), v, input
                     )
                 )
+            case DeltaMatrix.AddDMDS(dm, ds) =>
+                evalMatrix(output, dm, evalScalar(breeze.linalg.sum(output), ds, input))
+            case DeltaMatrix.MinusDMDM(m1, m2) =>
+                evalMatrix(output, m1, 
+                    evalMatrix(-output, m2, input)
+                )
+            case DeltaMatrix.MinusDMDCV(dm, dcv) =>
+                evalMatrix(output, dm, 
+                    evalColumnVector(-breeze.linalg.sum(output(*, ::)), dcv, input)
+                )
+            case DeltaMatrix.MinusDMDRV(dm, drv) => 
+                evalMatrix(output, dm, 
+                    evalRowVector(-breeze.linalg.sum(output(::, *)), drv, input)
+                )
+            case DeltaMatrix.MinusDMDS(dm, ds) =>
+                evalMatrix(output, dm, evalScalar(-breeze.linalg.sum(output), ds, input))
             case DeltaMatrix.Transpose(d) =>
                 evalMatrix(output.t, d, input)
-            case DeltaMatrix.MatrixDotMDM(m, d) => 
-                evalMatrix(m.t * output, d, input)
+            case DeltaMatrix.MatrixDotMDM(m, dm) => 
+                evalMatrix(m.t * output, dm, input)
             case DeltaMatrix.MatrixDotDCVRV(d, v) =>
                 evalColumnVector(output * v.t, d, input)
             case DeltaMatrix.MatrixDotCVDRV(v, d) =>
                 evalRowVector(v.t * output, d, input)
+            case DeltaMatrix.MatrixDotMDS(m, ds) => 
+                evalScalar(breeze.linalg.sum(output), ds, input)
+            case DeltaMatrix.MatrixDotDMS(d, s) =>
+                evalMatrix(output *:* s, d, input)
             case DeltaMatrix.ElementWiseScale(v, d) =>
                 evalMatrix(output *:* v, d, input)
-            case DeltaMatrix.MatrixDotDMM(d, m) =>
-                evalMatrix(output * m.t, d, input)
+            case DeltaMatrix.MatrixDotDMM(dm, m) =>
+                evalMatrix(output * m.t, dm, input)
             case DeltaMatrix.FromElements(values) =>
                 values.zipWithIndex.foldLeft(input)((input, t) => 
                     val (dScalar, index) = t
-                    val (iRow, jCol) = (index / output.cols, index % output.cols)
+                    val (jCol, iRow) = (index / output.rows, index % output.rows)
                     evalScalar(output(iRow, jCol), dScalar, input)
                 )
+            case DeltaMatrix.StackDRows(rows) =>
+                rows.zipWithIndex.foldLeft(input)((input, t) => 
+                    val (dRowVector, index) = t
+                    evalRowVector(output(index, ::), dRowVector, input)
+                )
+            case DeltaMatrix.Div(dm, s) =>
+                evalMatrix(output / s, dm, input)
+            case DeltaMatrix.ElementWiseOps(v, d, op) =>
+                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
+                val dOps = scalar2Scalar.derive(op)
+                evalMatrix(output *:* v.map(dOps), d, input)
+            case DeltaMatrix.ColumnWiseOps(v, d, op) => ???
+            case DeltaMatrix.ElementWiseOpsForward(v, d, op) =>
+                import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan.scalar2Scalar
+                val dOps = scalar2Scalar.derive(op)
+                evalMatrix(output *:* v.map(dOps), d, input)
 
     case class AccumulatedResult[P](
         scalars: Map[Int, P],

@@ -61,21 +61,21 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
     override def timesCVDS(v: DenseVector[Double], ds: ScalarD): ColumnVectorD = v * ds
     override def addDRVDRV(dv1: RowVectorD, dv2: RowVectorD): RowVectorD = dv1 + dv2
     override def timesDRVM(dv: RowVectorD, m: DenseMatrix[Double]): RowVectorD = dv * m
-    override def timesRDMV(v: Transpose[DenseVector[Double]], dv: MatrixD): RowVectorD = v * dv
+    override def timesRVDM(v: Transpose[DenseVector[Double]], dv: MatrixD): RowVectorD = v * dv
     override def addDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD = ds1 + ds2
     override def timesDRVCV(dv: RowVectorD, v: DenseVector[Double]): ScalarD = dv * v
     override def timesRVDCV(v: Transpose[DenseVector[Double]], dv: ColumnVectorD): ScalarD = v * dv
     override def timesDRVS(dv: RowVectorD, s: Double): RowVectorD = dv * s
     override def timesRVDS(v: Transpose[DenseVector[Double]], ds: ScalarD): RowVectorD = v * ds
     override def timesSDS(s: Double, ds: ScalarD): ScalarD = s * ds
-    override def addDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = dm(breeze.linalg.*, ::) + dv
-    override def addDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = dm(::, breeze.linalg.*) + dv.t
+    override def addDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = dm(::, breeze.linalg.*) + dv
+    override def addDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = dm(breeze.linalg.*, ::) + dv.t
     override def addDMDS(dm: MatrixD, ds: ScalarD): MatrixD = dm + ds
     override def addDCVDS(dv: ColumnVectorD, ds: ScalarD): ColumnVectorD = dv + ds
     override def addDRVDS(dv: RowVectorD, ds: ScalarD): RowVectorD = dv + ds
     override def subDMDM(dm1: MatrixD, dm2: MatrixD): MatrixD = dm1 - dm2
-    override def subDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = dm(breeze.linalg.*, ::) - dv
-    override def subDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = dm(::, breeze.linalg.*) - dv.t
+    override def subDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = dm(::, breeze.linalg.*) - dv
+    override def subDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = dm(breeze.linalg.*, ::) - dv.t
     override def subDMDS(dm: MatrixD, ds: ScalarD): MatrixD = dm - ds
     override def subDCVDCV(dv1: ColumnVectorD, dv2: ColumnVectorD): ColumnVectorD = dv1 - dv2
     override def subDCVDS(dv: ColumnVectorD, ds: ScalarD): ColumnVectorD = dv - ds
@@ -87,17 +87,28 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
     override def divideDRVS(dv: RowVectorD, s: Double): RowVectorD = dv / s
     override def divideDSS(ds: ScalarD, s: Double): ScalarD = ds / s
     override def sumDCV(dv: ColumnVectorD, vLength: Int): ScalarD = breeze.linalg.sum(dv)
+    override def sumDM(dm: MatrixD, nRows: Int, nCols: Int): ScalarD = breeze.linalg.sum(dm)
 
-    override def reduceCV(v: ColumnVector)(f: [T] => (T, T) => Numeric[T] ?=> T): Scalar =
-        val xx = v.v.toScalaVector.zip(v.dv.toScalaVector)
-            .map(DualNumber(_, _))
-            .reduce(f[DualNumber[Double]])
-        DualNumberScalar(xx.v, xx.dv)
+    override def foldLeftCV(s: Scalar)(v: ColumnVector)(f: (Scalar, Scalar) => Scalar): Scalar =
+        v.v.toScalaVector.zip(v.dv.toScalaVector)
+            .map(DualNumberScalar(_, _))
+            .foldLeft(s)((a, b) => f(a, b))
+
+    override def elementWiseTimesMDM(m: DenseMatrix[Double], dm: MatrixD): MatrixD = 
+        m *:* dm
+
+    override def elementWiseTimesCVDCV(v: DenseVector[Double], dv: ColumnVectorD): ColumnVectorD = 
+        v *:* dv
 
     override def elementAtDM(dm: DenseMatrix[Double], iRow: Int, jCol: Int, nRows: Int, nCols: Int): ScalarD = 
         assert(dm.rows == nRows)
         assert(dm.cols == nCols)
         dm(iRow, jCol)
+
+    def rowAtDM(dm: MatrixD, rowI: Int, nRows: Int, nCols: Int): RowVectorD = 
+        assert(dm.rows == nRows)
+        assert(dm.cols == nCols)
+        dm(rowI, ::)
 
     override def elementAtDCV(dv: ColumnVectorD, index: Int, length: Int): ScalarD = 
         assert(dv.length == length)
@@ -108,28 +119,70 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
         dv(index)
 
     override def elementWiseOpsM(m: Matrix, f: Scalar => Scalar): Matrix = 
-        val x = m.v.toArray.zip(m.dv.toArray).map((x, dx) => 
-            f(createScalar(x, dx))
-        )
+        val resultsV = Array.ofDim[Double](m.v.rows * m.v.cols)
+        val resultsDV = Array.ofDim[Double](m.dv.rows * m.dv.cols)
+
+        for {
+            j <- 0 until m.v.cols
+            i <- 0 until m.v.rows   
+        } {
+            val res = f(createScalar(m.v(i, j), m.dv(i, j)))
+            resultsV(j * m.v.rows + i) = res.v
+            resultsDV(j * m.v.rows + i) = res.dv
+        }
+
         createMatrix(
-            new DenseMatrix(m.rows, m.cols, x.map(_.v).toArray),
-            new DenseMatrix(m.rows, m.cols, x.map(_.dv).toArray)
+            new DenseMatrix(m.v.rows, m.v.cols, resultsV), 
+            new DenseMatrix(m.dv.rows, m.dv.cols, resultsDV)
+        )
+
+    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix =
+        val resultsV = Array.ofDim[Double](m.v.rows * m.v.cols)
+        val resultsDV = Array.ofDim[Double](m.dv.rows * m.dv.cols)
+
+        for {
+            j <- 0 until m.v.cols
+            i <- 0 until m.v.rows   
+        } {
+            val res = f(createColumnVector(m.v(::, j), m.dv(::, j)))
+            resultsV(j * m.v.rows + i) = res.v(i)
+            resultsDV(j * m.v.rows + i) = res.dv(i)
+        }
+
+        createMatrix(
+            new DenseMatrix(m.v.rows, m.v.cols, resultsV), 
+            new DenseMatrix(m.dv.rows, m.dv.cols, resultsDV)
         )
 
     override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector = 
-        val x = v.v.toScalaVector.zip(v.dv.toScalaVector).map((x, dx) => 
-            f(createScalar(x, dx))
-        )
+        val resultsV = Array.ofDim[Double](v.v.length)
+        val resultsDV = Array.ofDim[Double](v.dv.length)
+
+        for (i <- 0 until v.v.length) {
+            val res = f(createScalar(v.v(i), v.dv(i)))
+            resultsV(i) = res.v
+            resultsDV(i) = res.dv
+        }
+
         createColumnVector(
-            DenseVector(x.map(_.v).toArray),
-            DenseVector(x.map(_.dv).toArray)
+            new DenseVector(resultsV), 
+            new DenseVector(resultsDV)
         )
 
     override def elementWiseOpsRV(v: RowVector, f: Scalar => Scalar): RowVector = 
-        val x = v.v.t.toScalaVector.zip(v.dv.t.toScalaVector).map((x, dx) => 
-            f(createScalar(x, dx))
-        )
+        val resultsV = Array.ofDim[Double](v.v.inner.length)
+        val resultsDV = Array.ofDim[Double](v.dv.inner.length)
+
+        for (i <- 0 until v.v.inner.length) {
+            val res = f(createScalar(v.v(i), v.dv(i)))
+            resultsV(i) = res.v
+            resultsDV(i) = res.dv
+        }
+
         createRowVector(
-            DenseVector(x.map(_.v).toArray).t,
-            DenseVector(x.map(_.dv).toArray).t
+            new Transpose(new DenseVector(resultsV)), 
+            new Transpose(new DenseVector(resultsDV))
         )
+
+    def stackDRows(rows: RowVectorD*): MatrixD = 
+        DenseMatrix.vertcat(rows.map(_.t.toDenseMatrix): _*)
