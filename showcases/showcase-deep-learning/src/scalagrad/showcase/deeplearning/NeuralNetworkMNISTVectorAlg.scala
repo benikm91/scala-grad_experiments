@@ -26,11 +26,14 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
     // Current implementation has accuracy of 80% on test set after 1 epoch of training
     // equivalent tensorflow implementation is around 40% accuracy... why?
 
+    // 32 (torch) =>  1s
+    //  1 (torch) => 23s 
     // 32 => 480s
     // 16 => 347s
     //  8 => 332s
-    //  4 => ???s
-    val batchSize = 4
+    //  4 => 328s
+    //  1 => 290s
+    val batchSize = 1
     val nFeatures = MNISTDataSet.nFeatures
     val nHiddenUnits = 36
     val nOutputUnits = MNISTDataSet.nLabels
