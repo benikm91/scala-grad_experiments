@@ -165,6 +165,9 @@ class ScalaLinearAlgebraOpsFor[P: Fractional]() extends LinearAlgebraOps:
     override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix = 
         m.transpose.map(col => f(col).toVector)
     
+    override def rowWiseOpsM(m: Matrix, f: RowVector => RowVector): Matrix =
+        m.map(row => f(row).toVector)
+
     override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector =
         v.map(a => f(a))
 

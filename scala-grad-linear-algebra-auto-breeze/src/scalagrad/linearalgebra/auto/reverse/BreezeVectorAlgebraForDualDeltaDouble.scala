@@ -420,7 +420,21 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
                 dm <- m.dv
             } yield DeltaMatrix.ColumnWiseOps(m.v, dm, f)
         )
-        
+
+    override def rowWiseOpsM(m: Matrix, op: RowVector => RowVector): Matrix =
+        val mv2 = m.v.copy
+        for (r <- 0 until mv2.rows) {
+            val c = op(createRowVector(mv2(r, ::), DeltaMonad.zeroRV))
+            mv2(r, ::) := c.v
+        }
+        createMatrix(
+            mv2, 
+            for {
+                dm <- m.dv
+                newId <- deltaLetMatrix(DeltaMatrix.RowWiseOps(m.v, dm, op))
+            } yield DeltaMatrix.Val(newId)
+        )
+
     def elementWiseOpsMForward(m: Matrix, f: DualNumberScalar[Double] => DualNumberScalar[Double]): Matrix =
         createMatrix(
             new DenseMatrix(m.rows, m.cols, m.v.map(x => f(DualNumberScalar(x, 0.0)).v).toArray),

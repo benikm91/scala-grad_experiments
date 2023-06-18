@@ -309,6 +309,12 @@ trait LinearAlgebraOps:
         @targetName("columnWiseOpsM_Op")
         def mapColumns(f: ColumnVector => ColumnVector): Matrix = columnWiseOpsM(m, f)
 
+    def rowWiseOpsM(m: Matrix, f: RowVector => RowVector): Matrix
+    
+    extension (m: Matrix)
+        @targetName("rowWiseOpsM_Op")
+        def mapRows(f: RowVector => RowVector): Matrix = rowWiseOpsM(m, f)
+
     def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector
 
     extension (v: ColumnVector)

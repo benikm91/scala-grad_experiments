@@ -310,7 +310,14 @@ object Eval:
                 import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
                 val dOps = scalar2Scalar.derive(op)
                 evalMatrix(output *:* v.map(dOps), d, input)
-            case DeltaMatrix.ColumnWiseOps(v, d, op) => ???
+            case DeltaMatrix.RowWiseOps(v, d, op) => 
+                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.rowVector2RowVector
+                val dOps = rowVector2RowVector.derive(op)
+                val nextOutput = DenseMatrix.zeros[Double](output.rows, v.cols)
+                for (r <- 0 until v.rows) {
+                    nextOutput(r, ::) := (dOps(v(r, ::)) * output(r, ::).t).t
+                }
+                evalMatrix(nextOutput, d, input)
             case DeltaMatrix.ElementWiseOpsForward(v, d, op) =>
                 import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan.scalar2Scalar
                 val dOps = scalar2Scalar.derive(op)

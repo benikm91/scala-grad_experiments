@@ -120,8 +120,20 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
     override def elementWiseOpsM(m: Matrix, f: Scalar => Scalar): Matrix = 
         m.map(f)
 
-    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix = ???
-    
+    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix =
+        val m2 = m.copy
+        for (c <- 0 until m2.cols) {
+            m2(::, c) := f(m2(::, c))
+        }
+        m2
+
+    override def rowWiseOpsM(m: Matrix, f: RowVector => RowVector): Matrix = 
+        val m2 = m.copy
+        for (r <- 0 until m2.rows) {
+            m2(r, ::) := f(m2(r, ::))
+        }
+        m2
+
     override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector =
         v.map(f)
 

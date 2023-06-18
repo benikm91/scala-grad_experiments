@@ -3,6 +3,7 @@ package scalagrad.linearalgebra.auto.reverse.delta
 import breeze.linalg.{Transpose, DenseVector, DenseMatrix}
 import scalagrad.linearalgebra.auto.reverse.dual.{DualDeltaScalar, DualDeltaColumnVector}
 import scalagrad.linearalgebra.auto.forward.dual.DualNumberScalar
+import scalagrad.linearalgebra.auto.reverse.dual.DualDeltaRowVector
 
 enum DeltaMatrix[P]:
     case Zero(x: P)
@@ -29,4 +30,5 @@ enum DeltaMatrix[P]:
     case StackDRows(rows: Seq[DeltaRowVector[P]])
     case ElementWiseOps(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualDeltaScalar[P] => DualDeltaScalar[P])
     case ColumnWiseOps(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualDeltaColumnVector[P] => DualDeltaColumnVector[P])
+    case RowWiseOps(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualDeltaRowVector[P] => DualDeltaRowVector[P])
     case ElementWiseOpsForward(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualNumberScalar[P] => DualNumberScalar[P])

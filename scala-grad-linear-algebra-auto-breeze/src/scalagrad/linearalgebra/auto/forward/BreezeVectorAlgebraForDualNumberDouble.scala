@@ -136,23 +136,40 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
             new DenseMatrix(m.dv.rows, m.dv.cols, resultsDV)
         )
 
-    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix =
-        val resultsV = Array.ofDim[Double](m.v.rows * m.v.cols)
-        val resultsDV = Array.ofDim[Double](m.dv.rows * m.dv.cols)
-
-        for {
-            j <- 0 until m.v.cols
-            i <- 0 until m.v.rows   
-        } {
-            val res = f(createColumnVector(m.v(::, j), m.dv(::, j)))
-            resultsV(j * m.v.rows + i) = res.v(i)
-            resultsDV(j * m.v.rows + i) = res.dv(i)
-        }
-
+/*
+    // is slower than the above
+    override def elementWiseOpsM(m: Matrix, op: Scalar => Scalar): Matrix = 
+        import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan.scalar2Scalar
+        val dOps = scalar2Scalar.derive(op)
         createMatrix(
-            new DenseMatrix(m.v.rows, m.v.cols, resultsV), 
-            new DenseMatrix(m.dv.rows, m.dv.cols, resultsDV)
+            new DenseMatrix(m.rows, m.cols, m.v.map(x => op(DualNumberScalar[Double](x, 0.0)).v).toArray),
+            m.dv *:* m.v.map(dOps),
         )
+*/
+
+    override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix =
+        val mv2 = m.v.copy
+        val mdv2 = m.dv.copy
+        for (c <- 0 until mv2.cols) {
+            val r = f(
+                createColumnVector(mv2(::, c), mdv2(::, c))
+            )
+            mv2(::, c) := r.v
+            mdv2(::, c) := r.dv
+        }
+        createMatrix(mv2, mdv2)
+
+    override def rowWiseOpsM(m: Matrix, f: RowVector => RowVector): Matrix =
+        val mv2 = m.v.copy
+        val mdv2 = m.dv.copy
+        for (r <- 0 until mv2.rows) {
+            val c = f(
+                createRowVector(mv2(r, ::), mdv2(r, ::))
+            )
+            mv2(r, ::) := c.v
+            mdv2(r, ::) := c.dv
+        }
+        createMatrix(mv2, mdv2)
 
     override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector = 
         val resultsV = Array.ofDim[Double](v.v.length)

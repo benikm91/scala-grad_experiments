@@ -25,15 +25,28 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
     // TODO
     // Current implementation has accuracy of 80% on test set after 1 epoch of training
     // equivalent tensorflow implementation is around 40% accuracy... why?
+    // With batch_size == 1 accuracy is 75% in tensorflow...
 
-    // 32 (torch) =>  1s
-    //  1 (torch) => 23s 
+    // 32 (tensorflow) =>  1s
+    //  1 (tensorflow) => 23s 
+    // Before fix
     // 32 => 480s
     // 16 => 347s
     //  8 => 332s
     //  4 => 328s
     //  1 => 290s
-    val batchSize = 1
+    // After fix
+    // 256 => 11s
+    // 128 => 12s
+    //  64 => 12s
+    //  32 => 16s
+    //  16 => 17s
+    //   8 => 21s
+    //   4 => 25s
+    //   1 => 59s
+
+
+    val batchSize = 32
     val nFeatures = MNISTDataSet.nFeatures
     val nHiddenUnits = 36
     val nOutputUnits = MNISTDataSet.nLabels
@@ -56,6 +69,7 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
                     DenseMatrix.tabulate(yBatch.length, MNISTDataSet.nLabels) { (i, j) =>
                         if yBatch(i) == j then 1.0 else 0.0
                     }
+
                 })
         )
 
@@ -88,9 +102,11 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
         val h = xs * firstWs + firstW0.T
         val hh = h.map(relu)
         val o = hh * lastWs + lastW0.T
-        val rows = 
-            for (i <- 0 until o.rows) yield stableSoftmax(ops)(o.rowAt(i).T).T
-        ops.stackRowsSeq(rows)
+        o.mapRows(row => stableSoftmax(ops)(row.T).T)
+        // TODO because of rowAt we lose a lot performance here...
+        // val rows = 
+        //     for (i <- 0 until o.rows) yield stableSoftmax(ops)(o.rowAt(i).T).T
+        // ops.stackRowsSeq(rows)
 
     def crossEntropy(ops: LinearAlgebraOps)(ys: ops.Matrix, ysHat: ops.Matrix)(using n: Numeric[ops.Scalar], t: Trig[ops.Scalar]): ops.Scalar =
         def clip(x: ops.Scalar): ops.Scalar =
@@ -194,7 +210,7 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
             xs, firstW0, firstWs, lastW0, lastWs
         )
 
-    val rand = scala.util.Random()
+    val rand = scala.util.Random(42)
     
     val initFirstW0 = DenseVector.fill(nHiddenUnits)(rand.nextDouble() - 0.5)
     val initFirstWs = DenseMatrix.fill(nFeatures, nHiddenUnits)(rand.nextDouble() - 0.5)
@@ -233,7 +249,7 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
         println(f"${crossEntropy(BreezeVectorAlgebraForDouble)(ysM, ysHatM)}  -- with learned weights (${iters} iterations)")
     }
     time {
-        val iters = 100
+        val iters = 5
         println(f"Start reverse-mode on single batch with ${iters} iterations")
         val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
             initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters
@@ -260,7 +276,7 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
             inner(seq)
         }
 
-        val epochs = 1
+        val epochs = 10
         val iters = epochs * MNISTDataSet.trainSize / batchSize
         println(f"Start reverse-mode on train batches with ${iters} iterations")
         val miniBatchGradientDescentF = miniBatchGradientDescent

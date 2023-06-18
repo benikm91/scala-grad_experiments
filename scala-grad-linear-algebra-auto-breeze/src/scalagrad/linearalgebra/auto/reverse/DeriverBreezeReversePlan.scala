@@ -23,7 +23,12 @@ import scalagrad.linearalgebra.auto.reverse.eval.Eval.AccumulatedResult
 
 object DeriverBreezeReversePlan:
 
-    def runDelta[P](startId: DeltaId, deltaM: DeltaMonad[P, DeltaScalar[P]]): Deltas[P] =
+    def oneHotDenseVector(i: Int, size: Int): DenseVector[Double] =
+        val res = DenseVector.zeros[Double](size)
+        res(i) = 1.0
+        res
+
+    def runDelta[P, D <: Deltas[P]](startId: DeltaId, deltaM: DeltaMonad[P, D]): Deltas[P] =
         def wrap(body: Deltas[P], stateEntry: (DeltaId, Deltas[P])): Deltas[P] = 
             body match
                 case ds: DeltaScalar[P] => DeltaScalar.Let(stateEntry._1, stateEntry._2, ds)
@@ -74,6 +79,30 @@ object DeriverBreezeReversePlan:
             val lala = runDelta(1, delta).asInstanceOf[DeltaScalar[Double]]
             val result = Eval.evalScalar(1.0, lala, Eval.AccumulatedResult.empty[Double])
             result.matrices(0)
+
+    given rowVector2RowVector: Deriver[
+        BreezeVectorAlgebraForDualDeltaDouble.RowVector => BreezeVectorAlgebraForDualDeltaDouble.RowVector
+    ] with
+
+        override type dfT = (
+            Transpose[DenseVector[Double]],
+        ) => (
+            DenseMatrix[Double],
+        )
+
+        override def derive(f: fT): dfT = v =>
+            val fRes = f(DualDeltaRowVector(v, zeroRowVectorM(0)))
+            val lala = runDelta(1, fRes.delta).asInstanceOf[DeltaRowVector[Double]]
+            val inputLength = v.inner.length
+            val outputLength = fRes.v.inner.length
+            val res = DenseMatrix.zeros[Double](inputLength, outputLength)
+            for (iRow <- 0 until outputLength) {
+                val rv = oneHotDenseVector(iRow, outputLength).t
+                val result = Eval.evalRowVector(rv, lala, Eval.AccumulatedResult.empty[Double])
+                assert(result.rowVectors(0).inner.length == inputLength)
+                res(::, iRow) := result.rowVectors(0).t
+            }
+            res
 
     given vector2Scalar: Deriver[
         BreezeVectorAlgebraForDualDeltaDouble.ColumnVector => BreezeVectorAlgebraForDualDeltaDouble.Scalar

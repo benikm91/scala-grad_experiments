@@ -131,6 +131,12 @@ abstract class LinearAlgebraBasicTests(
         x.elementAt(0, 3) * x.elementAt(2, 1)
       )
     }
+    "work for map rows" in {
+      testM((ops: LinearAlgebraOps) => (x: ops.Matrix) =>
+        x.map(_ * 5)
+        x.mapRows(_ * 10).sum
+      )
+    }
     "work for row at" in {
       testM((ops: LinearAlgebraOps) => (x: ops.Matrix) =>
         x.rowAt(0) * x.rowAt(1).T
