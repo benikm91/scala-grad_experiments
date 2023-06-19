@@ -163,9 +163,7 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
         val mv2 = m.v.copy
         val mdv2 = m.dv.copy
         for (r <- 0 until mv2.rows) {
-            val c = f(
-                createRowVector(mv2(r, ::), mdv2(r, ::))
-            )
+            val c = f(createRowVector(mv2(r, ::), mdv2(r, ::)))
             mv2(r, ::) := c.v
             mdv2(r, ::) := c.dv
         }

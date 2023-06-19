@@ -50,61 +50,21 @@ type DeltaBindings[P] = List[(DeltaId, Deltas[P])]
 case class DeltaState[P](
     nextFree: DeltaId, 
     bindings: DeltaBindings[P], 
-    cacheScalar: Map[DeltaScalar[P], DeltaId],
-    cacheColumnVector: Map[DeltaColumnVector[P], DeltaId],
-    cacheRowVector: Map[DeltaRowVector[P], DeltaId],
-    cacheMatrix: Map[DeltaMatrix[P], DeltaId]
-):
-
-    def getScalar(delta: DeltaScalar[P]): Option[DeltaId] = cacheScalar.get(delta)
-    def getColumnVector(delta: DeltaColumnVector[P]): Option[DeltaId] = cacheColumnVector.get(delta)
-    def getRowVector(delta: DeltaRowVector[P]): Option[DeltaId] = cacheRowVector.get(delta)
-    def getMatrix(delta: DeltaMatrix[P]): Option[DeltaId] = cacheMatrix.get(delta)
-
-    def addScalar(delta: DeltaScalar[P]): (DeltaState[P], DeltaId) = (
-            copy(
-                nextFree = nextFree + 1,
-                bindings = (nextFree, delta) :: bindings,
-                cacheScalar = cacheScalar + (delta -> nextFree)
-            ),
-            nextFree
-        )
-
-    def addColumnVector(delta: DeltaColumnVector[P]): (DeltaState[P], DeltaId) = (
-            copy(
-                nextFree = nextFree + 1,
-                bindings = (nextFree, delta) :: bindings,
-                cacheColumnVector = cacheColumnVector + (delta -> nextFree)
-            ),
-            nextFree
-        )
-
-    def addRowVector(delta: DeltaRowVector[P]): (DeltaState[P], DeltaId) = (
-            copy(
-                nextFree = nextFree + 1,
-                bindings = (nextFree, delta) :: bindings,
-                cacheRowVector = cacheRowVector + (delta -> nextFree)
-            ),
-            nextFree
-        )
-
-    def addMatrix(delta: DeltaMatrix[P]): (DeltaState[P], DeltaId) = (
-            copy(
-                nextFree = nextFree + 1,
-                bindings = (nextFree, delta) :: bindings,
-                cacheMatrix = cacheMatrix + (delta -> nextFree)
-            ),
-            nextFree
-        )
+)
 
 object DeltaState:
     def start[P](
         nextFree: DeltaId,
     ) = DeltaState[P](
         nextFree, 
-        List(), 
-        Map(),
-        Map(),
-        Map(),
-        Map()
+        List(),
     )
+
+    def deltaLet[P](delta: Deltas[P]): DeltaMonad[P, DeltaId] = DeltaMonad[P, DeltaId](next => (
+        next.copy(
+            nextFree = next.nextFree + 1,
+            bindings = (next.nextFree, delta) :: next.bindings,
+        ),
+        next.nextFree
+    ))
+

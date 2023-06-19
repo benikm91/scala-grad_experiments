@@ -27,23 +27,26 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
     // equivalent tensorflow implementation is around 40% accuracy... why?
     // With batch_size == 1 accuracy is 75% in tensorflow...
 
+    // forward pass only
+    // 32 => 4s (10 epochs)
+
     // 32 (tensorflow) =>  1s
     //  1 (tensorflow) => 23s 
     // Before fix
-    // 32 => 480s
+    // 32 => 480s       => Without useless caches: 108s
     // 16 => 347s
     //  8 => 332s
     //  4 => 328s
     //  1 => 290s
     // After fix
-    // 256 => 11s
+    // 256 => 11s       => Without useless caches: 11s     => With forward softmax: 8s
     // 128 => 12s
     //  64 => 12s
-    //  32 => 16s
+    //  32 => 16s       => Without useless caches: 12s
     //  16 => 17s
     //   8 => 21s
     //   4 => 25s
-    //   1 => 59s
+    //   1 => 59s       => Without useless caches: 15s
 
 
     val batchSize = 32
@@ -82,12 +85,23 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
         val num = summon[Numeric[P]]
         if num.lt(x, num.zero) then num.zero else x
 
-    def softmax[P: Numeric](ops: LinearAlgebraOps)(x: ops.ColumnVector)(using t: Trig[ops.Scalar]): ops.ColumnVector = 
+    def dSoftmax(x: DenseVector[Double]): DenseMatrix[Double] =
+        val tt = softmax(BreezeVectorAlgebraForDouble)(x)
+        val softmaxR = softmax(BreezeVectorAlgebraForDouble)(x).toArray
+        DenseMatrix.tabulate(softmaxR.length, softmaxR.length) { (i, j) =>
+            if i == j then softmaxR(i) * (1 - softmaxR(i)) else -softmaxR(i) * softmaxR(j)
+        }
+
+    def dStableSoftmax(x: DenseVector[Double]): DenseMatrix[Double] =
+        val maxElement = breeze.linalg.max(x)
+        dSoftmax(x - maxElement)
+
+    def softmax(ops: LinearAlgebraOps)(x: ops.ColumnVector)(using t: Trig[ops.Scalar]): ops.ColumnVector = 
         val exps = x.map(x => t.exp(x))
         val sumExps = exps.sum
         exps / sumExps
 
-    def stableSoftmax[P: Numeric](ops: LinearAlgebraOps)(x: ops.ColumnVector)(using t: Trig[ops.Scalar]): ops.ColumnVector = 
+    def stableSoftmax(ops: LinearAlgebraOps)(x: ops.ColumnVector)(using t: Trig[ops.Scalar]): ops.ColumnVector = 
         val maxElement = x.elements.maxBy(_.toDouble)
         softmax(ops)(x - maxElement)
 
@@ -98,13 +112,25 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
         lastW0: ops.ColumnVector,
         lastWs: ops.Matrix,
     )(using num: Numeric[ops.Scalar], trig: Trig[ops.Scalar]): ops.Matrix = 
-        import ops.*
         val h = xs * firstWs + firstW0.T
         val hh = h.map(relu)
         val o = hh * lastWs + lastW0.T
-        o.mapRows(row => stableSoftmax(ops)(row.T).T)
+        ops match 
+            case oops: BreezeVectorAlgebraForDualDeltaDouble.type => 
+                val fops = BreezeVectorAlgebraForDualNumberDouble
+                oops.rowWiseOpsMForward(o.asInstanceOf[BreezeVectorAlgebraForDualDeltaDouble.Matrix], row => 
+                    fops.transposeColumVector(stableSoftmax(fops)(fops.transposeRowVector(row)))
+                ).asInstanceOf[ops.Matrix]
+            // case oops: BreezeVectorAlgebraForDualDeltaDouble.type => 
+            //     val stableSoftmaxV = stableSoftmax(BreezeVectorAlgebraForDouble)
+            //     oops.rowWiseOpsMManual(
+            //         o.asInstanceOf[BreezeVectorAlgebraForDualDeltaDouble.Matrix], 
+            //         row => stableSoftmaxV(row.t).t,
+            //         row => dStableSoftmax(row.t).t,
+            //     ).asInstanceOf[ops.Matrix]
+            case _ => o.mapRows(row => stableSoftmax(ops)(row.T).T)
         // TODO because of rowAt we lose a lot performance here...
-        // val rows = 
+        // val rows =
         //     for (i <- 0 until o.rows) yield stableSoftmax(ops)(o.rowAt(i).T).T
         // ops.stackRowsSeq(rows)
 
@@ -220,17 +246,27 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
     val xsM = xsTrain.head
     val ysM = ysTrain.head
     
-    val initYsHatM = makePredictions(xsM)(initFirstW0, initFirstWs, initLastW0, initLastWs)
-
-    println(initYsHatM.rows + " " + initYsHatM.cols)
-    println(ysM.rows + " " + ysM.cols)
-
-    println(f"${crossEntropy(BreezeVectorAlgebraForDouble)(ysM, initYsHatM)}  -- with initial weights")
-    println(f"${lossF(BreezeVectorAlgebraForDouble)(xsM, ysM)(initFirstW0, initFirstWs, initLastW0, initLastWs)}  -- with initial weights")
-    println("train acc: " + accuracy(initYsHatM, ysM) * 100 + " -- with initial weights")
-    
     time {
-        val iters = 0
+        val epochs = 10
+        val iters = epochs * MNISTDataSet.trainSize / batchSize
+        println(f"Start forward-pass only on single batch with ${iters} iterations")
+        
+        val initYsHatM = makePredictions(xsM)(initFirstW0, initFirstWs, initLastW0, initLastWs)
+        for (i <- 0 until iters - 1) {
+            makePredictions(xsM)(initFirstW0, initFirstWs, initLastW0, initLastWs)
+        }
+
+        println(initYsHatM.rows + " " + initYsHatM.cols)
+        println(ysM.rows + " " + ysM.cols)
+
+        println(f"${crossEntropy(BreezeVectorAlgebraForDouble)(ysM, initYsHatM)}  -- with initial weights")
+        println(f"${lossF(BreezeVectorAlgebraForDouble)(xsM, ysM)(initFirstW0, initFirstWs, initLastW0, initLastWs)}  -- with initial weights")
+        println("train acc: " + accuracy(initYsHatM, ysM) * 100 + " -- with initial weights")
+        
+    }
+    /*
+    time {
+        val iters = 1
         println(f"Start forward-mode on single batch with ${iters} iterations")
         val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
             initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters // 100_000
@@ -247,9 +283,9 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
 
         println("train acc: " + accuracy(ysHatM, ysM) * 100)
         println(f"${crossEntropy(BreezeVectorAlgebraForDouble)(ysM, ysHatM)}  -- with learned weights (${iters} iterations)")
-    }
+    }*/
     time {
-        val iters = 5
+        val iters = 1000
         println(f"Start reverse-mode on single batch with ${iters} iterations")
         val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
             initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters
@@ -276,15 +312,15 @@ import scalagrad.showcase.deeplearning.MNISTDataSet.MNISTEntry
             inner(seq)
         }
 
-        val epochs = 10
+        val epochs = 1
         val iters = epochs * MNISTDataSet.trainSize / batchSize
         println(f"Start reverse-mode on train batches with ${iters} iterations")
         val miniBatchGradientDescentF = miniBatchGradientDescent
             (cycle(xsTrain.zip(ysTrain)))
             (initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters)
-        
+
         import DeriverBreezeReversePlan.given
-        def createDLoss(xs: DenseMatrix[Double], ys: DenseMatrix[Double]) = 
+        def createDLoss(xs: DenseMatrix[Double], ys: DenseMatrix[Double]) =
             ScalaGrad.derive(lossF(BreezeVectorAlgebraForDualDeltaDouble)(
                 DualDeltaMatrix(xs, DeltaMonad.zeroM),
                 DualDeltaMatrix(ys, DeltaMonad.zeroM)

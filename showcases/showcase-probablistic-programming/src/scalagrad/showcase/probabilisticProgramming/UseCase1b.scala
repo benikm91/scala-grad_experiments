@@ -177,7 +177,7 @@ object UseCase1b extends App:
                 Channel.Y("key", FieldType.Nominal),
                 Channel.Color("type"),
             )
-            .markBoxplot()
+            .markBoxplot() 
 
         val trueValues = Chart(data)
             .encode(

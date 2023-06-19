@@ -5,7 +5,7 @@ import scalagrad.linearalgebra.auto.reverse.delta.DeltaScalar
 
 import scalagrad.api.CreateDual
 import DualDeltaScalar.D
-import DualDeltaScalar.deltaLet
+import DeltaState.deltaLet
 
 case class DualDeltaScalar[P: Fractional](
     val value: P,
@@ -56,10 +56,3 @@ object DualDeltaScalar:
       override def createEmpty(p: P): DualDeltaScalar[P] =
         DualDeltaScalar(p, ZeroM[P])
     }
-
-  def deltaLet[P](delta: DeltaScalar[P]): DeltaMonad[P, DeltaId] =
-    DeltaMonad[P, DeltaId](next =>
-      next.getScalar(delta) match
-        case None        => next.addScalar(delta)
-        case Some(value) => (next, value)
-    )

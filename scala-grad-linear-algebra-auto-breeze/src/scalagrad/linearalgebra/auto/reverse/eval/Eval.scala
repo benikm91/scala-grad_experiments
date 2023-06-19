@@ -48,7 +48,7 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
-            case DeltaScalar.Let(id, rhs, body) => 
+            case DeltaScalar.Let(id, rhs, body) =>
                 val nextInput = evalScalar(output, body, input)
                 evalDeltas(id, rhs, nextInput)
             case DeltaScalar.MultiplyVV(m1: DeltaRowVector[Double], m2: DeltaColumnVector[Double]) => ???
@@ -316,6 +316,20 @@ object Eval:
                 val nextOutput = DenseMatrix.zeros[Double](output.rows, v.cols)
                 for (r <- 0 until v.rows) {
                     nextOutput(r, ::) := (dOps(v(r, ::)) * output(r, ::).t).t
+                }
+                evalMatrix(nextOutput, d, input)
+            case DeltaMatrix.RowWiseOpsForward(v, d, op) => 
+                import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan.rowVector2RowVector
+                val dOps = rowVector2RowVector.derive(op)
+                val nextOutput = DenseMatrix.zeros[Double](output.rows, v.cols)
+                for (r <- 0 until v.rows) {
+                    nextOutput(r, ::) := (dOps(v(r, ::)) * output(r, ::).t).t
+                }
+                evalMatrix(nextOutput, d, input)
+            case DeltaMatrix.RowWiseOpsManual(v, d, dOp) => 
+                val nextOutput = DenseMatrix.zeros[Double](output.rows, v.cols)
+                for (r <- 0 until v.rows) {
+                    nextOutput(r, ::) := (dOp(v(r, ::)) * output(r, ::).t).t
                 }
                 evalMatrix(nextOutput, d, input)
             case DeltaMatrix.ElementWiseOpsForward(v, d, op) =>

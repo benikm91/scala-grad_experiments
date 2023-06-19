@@ -35,10 +35,6 @@ object DeriverBreezeForwardPlan:
         
         override def derive(f: fT): dfT =
             xs => 
-                def oneHotDenseVector(i: Int, size: Int): DenseVector[Double] =
-                    val res = DenseVector.zeros[Double](size)
-                    res(i) = 1.0
-                    res
                 DenseVector((
                     for (i <- 0 until xs.length) 
                         yield f(
@@ -46,6 +42,20 @@ object DeriverBreezeForwardPlan:
                         ).dv
                     ).toArray
                 )
+    
+    given rowVector2RowVector: Deriver[
+        BreezeVectorAlgebraForDualNumberDouble.RowVector => BreezeVectorAlgebraForDualNumberDouble.RowVector
+    ] with
+
+        override type dfT = Transpose[DenseVector[Double]] => DenseMatrix[Double]
+        
+        override def derive(f: fT): dfT =
+            xs => 
+                val res = for (i <- 0 until xs.inner.length) 
+                    yield f(
+                        DualNumberRowVector(xs, oneHotDenseVector(i, xs.inner.length).t)
+                    ).dv
+                DenseMatrix.vertcat(res.map(_.t.toDenseMatrix): _*)
     
     given matrix2Scalar: Deriver[
         BreezeVectorAlgebraForDualNumberDouble.Matrix => BreezeVectorAlgebraForDualNumberDouble.Scalar
