@@ -7,7 +7,8 @@ import breeze.linalg.{DenseVector, Transpose}
 
 case class DualDeltaRowVector[P: Fractional](
     val value: Transpose[DenseVector[P]], 
-    val delta: DeltaMonad[P, DeltaRowVector[P]]
-) extends DualRowVector[P, DeltaMonad[P, DeltaRowVector[P]]]:
+    val delta: DeltaRowVector[P],
+    private[scalagrad] var index: Int = 0
+) extends DualRowVector[P, DeltaRowVector[P]]:
     def v = value
     def dv = delta

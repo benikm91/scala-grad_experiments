@@ -17,8 +17,10 @@ import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.linearalgebra.api.BreezeVectorAlgebraForDualDouble
 import scalagrad.linearalgebra.auto.forward.dual.*
+import scalagrad.api.CreateDual
 
 object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDualDouble:
+
 
     override type ScalarD = Double
     override type ColumnVectorD = DenseVector[Double]
@@ -30,8 +32,7 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
     override type RowVector = DualNumberRowVector[Double]
     override type Matrix = DualNumberMatrix[Double]
 
-    override def createScalar(value: Double, dual: ScalarD): Scalar = 
-        DualNumberScalar(value, dual)
+    override given cd: CreateDual[Double, ScalarD, Scalar] = DualNumberScalar.create
 
     override def createColumnVector(value: DenseVector[Double], dual: ColumnVectorD): ColumnVector = 
         DualNumberColumnVector(value, dual)
@@ -67,7 +68,6 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
     override def timesRVDCV(v: Transpose[DenseVector[Double]], dv: ColumnVectorD): ScalarD = v * dv
     override def timesDRVS(dv: RowVectorD, s: Double): RowVectorD = dv * s
     override def timesRVDS(v: Transpose[DenseVector[Double]], ds: ScalarD): RowVectorD = v * ds
-    override def timesSDS(s: Double, ds: ScalarD): ScalarD = s * ds
     override def addDMDCV(dm: MatrixD, dv: ColumnVectorD): MatrixD = dm(::, breeze.linalg.*) + dv
     override def addDMDRV(dm: MatrixD, dv: RowVectorD): MatrixD = dm(breeze.linalg.*, ::) + dv.t
     override def addDMDS(dm: MatrixD, ds: ScalarD): MatrixD = dm + ds
@@ -85,7 +85,6 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
     override def divideDMS(dm: MatrixD, s: Double): MatrixD = dm / s
     override def divideDCVS(dv: ColumnVectorD, s: Double): ColumnVectorD = dv / s
     override def divideDRVS(dv: RowVectorD, s: Double): RowVectorD = dv / s
-    override def divideDSS(ds: ScalarD, s: Double): ScalarD = ds / s
     override def sumDCV(dv: ColumnVectorD, vLength: Int): ScalarD = breeze.linalg.sum(dv)
     override def sumDM(dm: MatrixD, nRows: Int, nCols: Int): ScalarD = breeze.linalg.sum(dm)
 

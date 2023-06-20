@@ -401,8 +401,8 @@ trait LinearAlgebraOps:
         @targetName("rowAtM_Op")
         def rowAt(rowI: Int): RowVector = rowAtM(m, rowI)
 
-    def elementsCV(v: ColumnVector): Seq[Scalar] = 
-        for (i <- 0 until v.length) yield v.elementAt(i)
+    def elementsCV(v: ColumnVector): Seq[Scalar] = ???
+        // for (i <- 0 until v.length) yield v.elementAt(i)
     def elementAtCV(v: ColumnVector, i: Int): Scalar
 
     extension (v: ColumnVector)

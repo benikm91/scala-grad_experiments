@@ -19,7 +19,7 @@ case class DualNumberScalar[T](value: T, derivative: T)(using f: Fractional[T]) 
 
 object DualNumberScalar:
 
-  given[T](using f: Fractional[T]): CreateDual[T, T, DualNumberScalar[T]] = new CreateDual[T, T, DualNumberScalar[T]] {
+  given create[T](using f: Fractional[T]): CreateDual[T, T, DualNumberScalar[T]] = new CreateDual[T, T, DualNumberScalar[T]] {
     override def create(p: T, d: T): DualNumberScalar[T] = DualNumberScalar(p, d)
     override def createEmpty(p: T): DualNumberScalar[T] = DualNumberScalar(p, f.zero)
   }

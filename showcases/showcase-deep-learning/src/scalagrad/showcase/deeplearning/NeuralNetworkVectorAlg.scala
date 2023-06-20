@@ -9,7 +9,9 @@ import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan
 import scalagrad.linearalgebra.auto.forward.BreezeVectorAlgebraForDualNumberDouble
 import scalagrad.linearalgebra.auto.forward.dual.{DualNumberMatrix, DualNumberColumnVector, DualNumberRowVector, DualNumberScalar}
 import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan
+import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan2
 import scalagrad.linearalgebra.auto.reverse.BreezeVectorAlgebraForDualDeltaDouble
+import scalagrad.linearalgebra.auto.reverse.BreezeVectorAlgebraForDualDeltaDoubleTotalOrder
 import scalagrad.linearalgebra.auto.reverse.dual.{DeltaMonad, DualDeltaMatrix, DualDeltaColumnVector, DualDeltaRowVector, DualDeltaScalar}
 import scalagrad.linearalgebra.auto.reverse.delta.{DeltaMatrix, DeltaColumnVector, DeltaRowVector, DeltaScalar}
 import breeze.linalg.{DenseMatrix, DenseVector}
@@ -136,7 +138,7 @@ import spire.implicits.*
         loss(ops)(ys, ysHat)
     
     time {
-        val iters = 100
+        val iters = 1
         println(f"Start forward-mode with ${iters} iterations")
         val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
             initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters // 100_000
@@ -162,16 +164,18 @@ import spire.implicits.*
         println(f"${Math.sqrt(loss(BreezeVectorAlgebraForDouble)(DenseVector(ys.toArray), DenseVector(ysHat.toArray)))}g  -- RMSE with learned weights (${iters} iterations)")
     }
     time {
-        val iters = 100
+        val iters = 1
         println(f"Start reverse-mode with ${iters} iterations")
         val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
             initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters // 100_000
         )
         
-        import DeriverBreezeReversePlan.given
-        val dLoss = ScalaGrad.derive(lossF(BreezeVectorAlgebraForDualDeltaDouble)(
-            DualDeltaMatrix(xsSS, DeltaMonad.zeroM),
-            DualDeltaColumnVector(ysSS, DeltaMonad.zeroCV)
+        val lalalala = DeriverBreezeReversePlan2()
+        import lalalala.given
+        val op2 = BreezeVectorAlgebraForDualDeltaDoubleTotalOrder()
+        val dLoss = ScalaGrad.derive(lossF(op2)(
+            op2.liftMatrix(xsSS),
+            op2.liftColumnVector(ysSS)
         ))
         val (firstW0, firstWs, lastW0, lastWs) = gradientDescentF(dLoss)
 
@@ -187,3 +191,30 @@ import spire.implicits.*
 
         println(f"${Math.sqrt(loss(BreezeVectorAlgebraForDouble)(DenseVector(ys.toArray), DenseVector(ysHat.toArray)))}g  -- RMSE with learned weights (${iters} iterations)")
     }
+    /*
+    time {
+        val iters = 1000
+        println(f"Start reverse-mode with ${iters} iterations")
+        val gradientDescentF = gradientDescent(BreezeVectorAlgebraForDouble)(
+            initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters // 100_000
+        )
+        
+        import DeriverBreezeReversePlan.given
+        val dLoss = ScalaGrad.derive(lossF(BreezeVectorAlgebraForDualDeltaDouble)(
+            DualDeltaMatrix(xsSS, DeltaMatrix.zero),
+            DualDeltaColumnVector(ysSS, DeltaColumnVector.zero)
+        ))
+        val (firstW0, firstWs, lastW0, lastWs) = gradientDescentF(dLoss)
+
+        val ysHat = StandardScaler.inverseScaleColumn( 
+            (0 until xsSS.rows).map { i =>
+                val row = xsSS(i, ::)
+                neuralNetwork(BreezeVectorAlgebraForDouble)(
+                    row, firstW0, firstWs, lastW0, lastWs
+                )
+            }.toVector, 
+            ys_mean, ys_std
+        )
+
+        println(f"${Math.sqrt(loss(BreezeVectorAlgebraForDouble)(DenseVector(ys.toArray), DenseVector(ysHat.toArray)))}g  -- RMSE with learned weights (${iters} iterations)")
+    }*/

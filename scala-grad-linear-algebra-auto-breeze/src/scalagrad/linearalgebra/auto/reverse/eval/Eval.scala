@@ -21,6 +21,7 @@ object Eval:
 
     def evalDeltas(id: Int, rhs: Deltas[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
         rhs match
+            // TODO why no lookup in input?
             case ds: DeltaScalar[Double] => 
                 evalScalar(input.scalars(id), ds, input.copy(
                     scalars = input.scalars - id
@@ -48,7 +49,7 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
-            case DeltaScalar.Let(id, rhs, body) =>
+            case DeltaScalar.Let(id, rhs, body) =>             
                 val nextInput = evalScalar(output, body, input)
                 evalDeltas(id, rhs, nextInput)
             case DeltaScalar.MultiplyVV(m1: DeltaRowVector[Double], m2: DeltaColumnVector[Double]) => ???
@@ -78,8 +79,8 @@ object Eval:
                 )
             case DeltaScalar.Div(d: DeltaScalar[Double], scale: Double) =>
                 evalScalar(output / scale, d, input)
-            case DeltaScalar.Scale(d: DeltaScalar[Double], scale: Double) =>
-                evalScalar(output * scale, d, input)
+            case DeltaScalar.Scale(scale: Double, ds: DeltaScalar[Double]) =>
+                evalScalar(output * scale, ds, input)
             case DeltaScalar.ElementAtM(m: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) =>
                 val id = m.asInstanceOf[DeltaMatrix.Val[Double]].id
                 input.copy(
@@ -219,15 +220,9 @@ object Eval:
                     evalScalar(output(index), dScalar, input)
                 )
             case DeltaRowVector.RowAtM(dm, row, nRows, nCols) =>
-                val id = dm.asInstanceOf[DeltaMatrix.Val[Double]].id
-                input.copy(
-                    matrices = 
-                        input.matrices.updatedWith(id)(ov => 
-                            val v = ov.getOrElse(DenseMatrix.zeros[Double](nRows, nCols))
-                            v(row, ::) += output
-                            Some(v)
-                        )
-                )
+                val newOutput = DenseMatrix.zeros[Double](nRows, nCols)
+                newOutput(row, ::) := output
+                evalMatrix(newOutput, dm, input)
             case DeltaRowVector.ElementWiseOps(v, d, op) =>
                 import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
                 val dOps = scalar2Scalar.derive(op)

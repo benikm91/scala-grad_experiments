@@ -15,7 +15,8 @@ import scala.reflect.ClassTag
 import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
-import scalagrad.linearalgebra.api.dual.* 
+import scalagrad.linearalgebra.api.dual.*
+import scalagrad.api.CreateDual
 
 trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     
@@ -29,7 +30,10 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     override type RowVector <: DualRowVector[Double, RowVectorD]
     override type Matrix <: DualMatrix[Double, MatrixD]
 
-    def createScalar(value: Double, dual: ScalarD): Scalar
+    given cd: CreateDual[Double, ScalarD, Scalar]
+    private val numScalar = summon[Numeric[Scalar]]
+
+    def createScalar(value: Double, dual: ScalarD): Scalar = cd.create(value, dual)
     def createColumnVector(value: DenseVector[Double], dual: ColumnVectorD): ColumnVector
     def createRowVector(value: Transpose[DenseVector[Double]], dual: RowVectorD): RowVector
     def createMatrix(value: DenseMatrix[Double], dual: MatrixD): Matrix
@@ -128,7 +132,7 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
         val xx = v.v * m.v
         createRowVector(v.v * m.v, dTimes(v.v, v.dv, m.v, m.dv))    
 
-    def addDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD
+    def addDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD // TODO remove this function (already implemented in DualScalar)
     def timesDRVCV(dv: RowVectorD, v: DenseVector[Double]): ScalarD
     def timesRVDCV(v: Transpose[DenseVector[Double]], dv: ColumnVectorD): ScalarD
 
@@ -151,16 +155,7 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
             )
         createRowVector(v.v * s.v, dTimes(v.v, v.dv, s.v, s.dv))
 
-    def timesSDS(s: Double, ds: ScalarD): ScalarD
-    def timesDSS(ds: ScalarD, s: Double): ScalarD = timesSDS(s, ds)  // commutative
-
-    override def timesSS(s1: Scalar, s2: Scalar): Scalar =
-        def dTimes(s1: Double, ds1: ScalarD, s2: Double, ds2: ScalarD): ScalarD =
-            addDSDS(
-                timesSDS(s1, ds2),
-                timesDSS(ds1, s2)
-            )
-        createScalar(s1.v * s2.v, dTimes(s1.v, s1.dv, s2.v, s2.dv))
+    override def timesSS(s1: Scalar, s2: Scalar): Scalar = numScalar.times(s1, s2)
 
     override def plusMM(m1: Matrix, m2: Matrix): Matrix = 
         createMatrix(m1.v + m2.v, addDMDM(m1.dv, m2.dv))
@@ -199,8 +194,7 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
     override def plusRVS(v: RowVector, s: Scalar): RowVector =
         createRowVector(v.v + s.v, addDRVDS(v.dv, s.dv))
       
-    override def plusSS(s1: Scalar, s2: Scalar): Scalar =
-        createScalar(s1.v + s2.v, addDSDS(s1.dv, s2.dv))
+    override def plusSS(s1: Scalar, s2: Scalar): Scalar = numScalar.plus(s1, s2)
 
     def subDMDM(dm1: MatrixD, dm2: MatrixD): MatrixD
 
@@ -244,8 +238,7 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
 
     def subDSDS(ds1: ScalarD, ds2: ScalarD): ScalarD
 
-    override def minusSS(s1: Scalar, s2: Scalar): Scalar =
-        createScalar(s1.v - s2.v, subDSDS(s1.dv, s2.dv))
+    override def minusSS(s1: Scalar, s2: Scalar): Scalar = numScalar.minus(s1, s2)
 
     def divideDMS(dm: MatrixD, s: Double): MatrixD
 
@@ -277,15 +270,7 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
             )
         createRowVector(v.v / s.v, dDivide(v.v, v.dv, s.v, s.dv))
 
-    def divideDSS(ds: ScalarD, s: Double): ScalarD
-
-    override def divideSS(s1: Scalar, s2: Scalar): Scalar =
-        def dDivide(s1: Double, ds1: ScalarD, s2: Double, ds2: ScalarD): ScalarD =
-            divideDSS(
-                subDSDS(timesDSS(ds1, s2), timesSDS(s1, ds2)),
-                (s2 * s2)
-            )
-        createScalar(s1.v / s2.v, dDivide(s1.v, s1.dv, s2.v, s2.dv))
+    override def divideSS(s1: Scalar, s2: Scalar): Scalar = numScalar.div(s1, s2)
     
     def sumDCV(dv: ColumnVectorD, length: Int): ScalarD
 

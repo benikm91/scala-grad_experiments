@@ -111,6 +111,11 @@ object DualIsNumeric:
                 return num.zero
             chain(num.round, dRound)(a)
 
+        override def fromInt(n: Int): PD = lift(num.fromInt(n))
+
+        override def fromBigInt(n: BigInt): PD = 
+            lift(num.fromBigInt(n))
+
         override def fromBigDecimal(n: BigDecimal): PD = lift(num.fromBigDecimal(n))
 
         // fpow = f(ractional) pow(er)

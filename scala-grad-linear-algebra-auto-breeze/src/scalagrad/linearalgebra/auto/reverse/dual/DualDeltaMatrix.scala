@@ -7,8 +7,9 @@ import breeze.linalg.DenseMatrix
 
 case class DualDeltaMatrix[P: Fractional](
     val value: DenseMatrix[P], 
-    val delta: DeltaMonad[P, DeltaMatrix[P]]
-) extends DualMatrix[P, DeltaMonad[P, DeltaMatrix[P]]]:
+    val delta: DeltaMatrix[P],
+    private[scalagrad] var index: Int = 0
+) extends DualMatrix[P, DeltaMatrix[P]]:
     def v = value
     def dv = delta
     
