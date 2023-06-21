@@ -302,6 +302,13 @@ trait LinearAlgebraOps:
     extension (m: Matrix)
         @targetName("elementWiseOpsM_Op")
         def map(f: Scalar => Scalar): Matrix = elementWiseOpsM(m, f)
+        def map2(f: Scalar => Scalar): Matrix = 
+            val mT = m.T
+            val elements = for {
+                i <- 0 until mT.rows
+                j <- 0 until mT.cols
+            } yield f(mT.elementAt(i, j))
+            fromElementsSeq(m.rows, m.cols, elements)
 
     def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix
     
@@ -314,6 +321,9 @@ trait LinearAlgebraOps:
     extension (m: Matrix)
         @targetName("rowWiseOpsM_Op")
         def mapRows(f: RowVector => RowVector): Matrix = rowWiseOpsM(m, f)
+        def mapRows2(f: RowVector => RowVector): Matrix = 
+            val rows = for (i <- 0 until m.rows) yield f(m.rowAt(i))
+            stackRowsSeq(rows)
 
     def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector
 
@@ -392,6 +402,9 @@ trait LinearAlgebraOps:
     def elementAtM(m: Matrix, rowI: Int, columnJ: Int): Scalar
     def rowAtM(m: Matrix, rowI: Int): RowVector
 
+    def fromElements(nRows: Int, nCols: Int, elements: Scalar*): Matrix
+    def fromElementsSeq(nRows: Int, nCols: Int, elements: Seq[Scalar]): Matrix = fromElements(nRows, nCols, elements: _*)
+
     def stackRows(rows: RowVector*): Matrix
     def stackRowsSeq(rows: Seq[RowVector]): Matrix = stackRows(rows: _*)
 
@@ -401,8 +414,8 @@ trait LinearAlgebraOps:
         @targetName("rowAtM_Op")
         def rowAt(rowI: Int): RowVector = rowAtM(m, rowI)
 
-    def elementsCV(v: ColumnVector): Seq[Scalar] = ???
-        // for (i <- 0 until v.length) yield v.elementAt(i)
+    def elementsCV(v: ColumnVector): Seq[Scalar] = 
+        for (i <- 0 until v.length) yield v.elementAt(i)
     def elementAtCV(v: ColumnVector, i: Int): Scalar
 
     extension (v: ColumnVector)

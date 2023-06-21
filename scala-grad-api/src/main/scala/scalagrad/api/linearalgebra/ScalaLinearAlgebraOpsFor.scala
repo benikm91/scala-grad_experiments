@@ -179,4 +179,7 @@ class ScalaLinearAlgebraOpsFor[P: Fractional]() extends LinearAlgebraOps:
 
     override def elementAtCV(v: ColumnVector, i: Int): Scalar = v(i)
 
+    def fromElements(nRows: Int, nCols: Int, elements: Scalar*): Matrix =
+        elements.toVector.grouped(nCols).toVector
+
     def stackRows(rows: RowVector*): Matrix = rows.toVector

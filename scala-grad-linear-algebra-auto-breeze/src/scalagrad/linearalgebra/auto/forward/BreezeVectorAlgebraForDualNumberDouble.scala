@@ -32,6 +32,9 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
     override type RowVector = DualNumberRowVector[Double]
     override type Matrix = DualNumberMatrix[Double]
 
+    def liftMatrix(m: DenseMatrix[Double]): Matrix = 
+        DualNumberMatrix(m, DenseMatrix.zeros[Double](m.rows, m.cols))
+
     override given cd: CreateDual[Double, ScalarD, Scalar] = DualNumberScalar.create
 
     override def createColumnVector(value: DenseVector[Double], dual: ColumnVectorD): ColumnVector = 
@@ -197,6 +200,9 @@ object BreezeVectorAlgebraForDualNumberDouble extends BreezeVectorAlgebraForDual
             new Transpose(new DenseVector(resultsV)), 
             new Transpose(new DenseVector(resultsDV))
         )
+
+    def fromDElements(nRows: Int, nCols: Int, elements: ScalarD*): MatrixD
+        = new DenseMatrix(nRows, nCols, elements.toArray)
 
     def stackDRows(rows: RowVectorD*): MatrixD = 
         DenseMatrix.vertcat(rows.map(_.t.toDenseMatrix): _*)

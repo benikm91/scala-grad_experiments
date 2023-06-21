@@ -33,10 +33,10 @@ final case class BreezeVectorAlgebraForDualDeltaDoubleTotalOrder(private var nex
     type Index = Int
     val ops = BreezeVectorAlgebraForDualDeltaDouble
 
-    override type Scalar = DualDeltaScalar[Double]
-    override type ColumnVector = DualDeltaColumnVector[Double]
-    override type RowVector = DualDeltaRowVector[Double]
-    override type Matrix = DualDeltaMatrix[Double]
+    override type Scalar = BreezeVectorAlgebraForDualDeltaDouble.Scalar
+    override type ColumnVector = BreezeVectorAlgebraForDualDeltaDouble.ColumnVector
+    override type RowVector = BreezeVectorAlgebraForDualDeltaDouble.RowVector
+    override type Matrix = BreezeVectorAlgebraForDualDeltaDouble.Matrix
 
     def liftMatrix(m: DenseMatrix[Double]): Matrix = 
         val res = ops.liftMatrix(m)
@@ -266,6 +266,10 @@ final case class BreezeVectorAlgebraForDualDeltaDoubleTotalOrder(private var nex
 
     override def rowAtM(m: Matrix, rowI: Int): RowVector = 
         val res = ops.rowAtM(m, rowI)
+        markIndex(res)
+
+    override def fromElements(nRows: Int, nCols: Int, elements: Scalar*): Matrix =
+        val res = ops.fromElements(nRows, nCols, elements: _*)
         markIndex(res)
 
     override def stackRows(rows: RowVector*): Matrix = 

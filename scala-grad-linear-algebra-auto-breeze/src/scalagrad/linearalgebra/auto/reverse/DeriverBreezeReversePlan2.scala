@@ -21,9 +21,11 @@ import scalagrad.linearalgebra.auto.reverse.dual.*
 import scalagrad.linearalgebra.auto.reverse.eval.EvalTotalOrder
 import scalagrad.linearalgebra.auto.reverse.eval.EvalTotalOrder.Results
 
-case class DeriverBreezeReversePlan2(private var index0: Int = 0):
+object DeriverBreezeReversePlan2:
 
-    val ops = BreezeVectorAlgebraForDualDeltaDoubleTotalOrder(index0)
+    private val ops = BreezeVectorAlgebraForDualDeltaDouble
+
+    def createOps() = BreezeVectorAlgebraForDualDeltaDoubleTotalOrder()
 
     def oneHotDenseVector(i: Int, size: Int): DenseVector[Double] =
         val res = DenseVector.zeros[Double](size)

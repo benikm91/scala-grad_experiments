@@ -81,26 +81,14 @@ object Eval:
                 evalScalar(output / scale, d, input)
             case DeltaScalar.Scale(scale: Double, ds: DeltaScalar[Double]) =>
                 evalScalar(output * scale, ds, input)
-            case DeltaScalar.ElementAtM(m: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) =>
-                val id = m.asInstanceOf[DeltaMatrix.Val[Double]].id
-                input.copy(
-                    matrices = 
-                        input.matrices.updatedWith(id)(ov => 
-                            val v = ov.getOrElse(DenseMatrix.zeros[Double](nRows, nCols))
-                            v(row, col) += output
-                            Some(v)
-                        )
-                )
+            case DeltaScalar.ElementAtM(dm: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) =>
+                val newOutput = DenseMatrix.zeros[Double](nRows, nCols)
+                newOutput(row, col) = output
+                evalMatrix(newOutput, dm, input)
             case DeltaScalar.ElementAtCV(delta: DeltaColumnVector[Double], index: Int, deltaLength: Int) =>
-                val id = delta.asInstanceOf[DeltaColumnVector.Val[Double]].id
-                input.copy(
-                    columnVectors = 
-                        input.columnVectors.updatedWith(id)(ov => 
-                            val v = ov.getOrElse(DenseVector.zeros[Double](deltaLength))
-                            v(index) += output
-                            Some(v)
-                        )
-                )
+                val newOutput = DenseVector.zeros[Double](deltaLength)
+                newOutput(index) = output
+                evalColumnVector(newOutput, delta, input)
             case DeltaScalar.ElementAtRV(delta: DeltaRowVector[Double], index: Int, deltaLength: Int) =>
                 import breeze.linalg.operators.HasOps.liftSlice
                 input.copy(

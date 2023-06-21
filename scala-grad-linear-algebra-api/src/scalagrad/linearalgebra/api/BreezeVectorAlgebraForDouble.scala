@@ -141,5 +141,8 @@ object BreezeVectorAlgebraForDouble extends LinearAlgebraOps:
 
     override def elementAtM(m: DenseMatrix[Double], i: Int, j: Int): Scalar = m(i, j)
 
+    override def fromElements(nRows: Int, nCols: Int, elements: Scalar*): Matrix =
+        new DenseMatrix(nRows, nCols, elements.toArray)
+
     override def stackRows(rows: RowVector*): Matrix = 
         DenseMatrix.vertcat(rows.map(_.t.toDenseMatrix): _*)

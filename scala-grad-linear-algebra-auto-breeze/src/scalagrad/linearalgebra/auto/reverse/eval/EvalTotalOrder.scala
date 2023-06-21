@@ -67,9 +67,11 @@ object EvalTotalOrder:
         results
 
     def evalScalar(output: Double, delta: DeltaScalar[Double]): Results[Double] =
+        assert(delta.index != -1)
         eval(EvalStepScalarResult(output, delta), delta.index)
 
     def evalRowVector(output: Transpose[DenseVector[Double]], delta: DeltaRowVector[Double]): Results[Double] = 
+        assert(delta.index != -1)
         eval(EvalStepRowVectorResult(output, delta), delta.index)
 
     def evalScalarStep(
@@ -128,12 +130,52 @@ object EvalTotalOrder:
                     evalScalarStep(output / scale, d, intermediateResults, endIndex, results)
                 case DeltaScalar.Scale(scale: Double, ds: DeltaScalar[Double]) =>
                     evalScalarStep(output * scale, ds, intermediateResults, endIndex, results)
-                case DeltaScalar.ElementAtM(m: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) =>
-                    val id = m.asInstanceOf[DeltaMatrix.Val[Double]].id
-                    ???
-                case DeltaScalar.ElementAtCV(delta: DeltaColumnVector[Double], index: Int, deltaLength: Int) =>
-                    val id = delta.asInstanceOf[DeltaColumnVector.Val[Double]].id
-                    ???
+                case DeltaScalar.ElementAtM(dm: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) =>
+                    val index = dm.index
+                    lazy val newOutput = {
+                        val newOutput = DenseMatrix.zeros[Double](nRows, nCols)
+                        newOutput(row, col) = output
+                        newOutput
+                    }
+                    if (index == -1) {
+                        // If dm is a Val, then we can directly update the result
+                        assert(dm.isInstanceOf[DeltaMatrix.Val[Double]])
+                        evalMatrixStep(newOutput, dm, intermediateResults, endIndex, results)
+                    } else {
+                        // Store change in intermediateResults
+                        intermediateResults(index) = Option(intermediateResults(index).asInstanceOf[EvalStepMatrixResult]).fold(
+                            EvalStepMatrixResult(newOutput, dm)
+                        )(x =>
+                            assert(x.dm.index == dm.index)
+                            val existingOutput = x.output.copy
+                            existingOutput(row, col) += output
+                            x.copy(output = existingOutput)
+                        )
+                        results
+                    }
+                case DeltaScalar.ElementAtCV(dcv: DeltaColumnVector[Double], i: Int, deltaLength: Int) =>
+                    val index = dcv.index
+                    lazy val newOutput = {
+                        val newOutput = DenseVector.zeros[Double](deltaLength)
+                        newOutput(i) = output
+                        newOutput
+                    }
+                    if (index == -1) {
+                        // If dm is a Val, then we can directly update the result
+                        assert(dcv.isInstanceOf[DeltaColumnVector.Val[Double]])
+                        evalColumnVectorStep(newOutput, dcv, intermediateResults, endIndex, results)
+                    } else {
+                        intermediateResults(index) = 
+                            Option(intermediateResults(index).asInstanceOf[EvalStepColumnVectorResult]).fold(
+                                EvalStepColumnVectorResult(newOutput, dcv)
+                            )(x =>
+                                assert(x.dcv.index == dcv.index)
+                                val existingOutput = x.output.copy
+                                existingOutput(i) += output
+                                x.copy(output = existingOutput)
+                            )
+                        results
+                    }
                 case DeltaScalar.ElementAtRV(delta: DeltaRowVector[Double], index: Int, deltaLength: Int) =>
                     import breeze.linalg.operators.HasOps.liftSlice
                     ???
@@ -273,20 +315,27 @@ object EvalTotalOrder:
                     )
                 case DeltaRowVector.RowAtM(dm, row, nRows, nCols) =>
                     val index = dm.index
-                    intermediateResults(index) =
-                        Option(intermediateResults(index).asInstanceOf[EvalStepMatrixResult]).fold(
-                            EvalStepMatrixResult({
-                                val newOutput = DenseMatrix.zeros[Double](nRows, nCols)
-                                newOutput(row, ::) := output
-                                newOutput
-                            }, dm)
-                        )(x =>
-                            assert(x.dm.index == dm.index)
-                            val newOutput = x.output.copy
-                            newOutput(row, ::) += output
-                            x.copy(output = newOutput)
-                        )
-                    results
+                    lazy val newOutput = {
+                        val newOutput = DenseMatrix.zeros[Double](nRows, nCols)
+                        newOutput(row, ::) := output
+                        newOutput
+                    }
+                    if (index == -1) {
+                        // If dm is a Val, then we can directly update the result
+                        assert(dm.isInstanceOf[DeltaMatrix.Val[Double]])
+                        evalMatrixStep(newOutput, dm, intermediateResults, endIndex, results)
+                    } else {
+                        intermediateResults(index) =
+                            Option(intermediateResults(index).asInstanceOf[EvalStepMatrixResult]).fold(
+                                EvalStepMatrixResult(newOutput, dm)
+                            )(x =>
+                                assert(x.dm.index == dm.index)
+                                val newOutput = x.output.copy
+                                newOutput(row, ::) += output
+                                x.copy(output = newOutput)
+                            )
+                        results
+                    }
                 case DeltaRowVector.ElementWiseOps(v, d, op) =>
                     import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
                     val dOps = scalar2Scalar.derive(op)

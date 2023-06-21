@@ -336,6 +336,14 @@ trait BreezeVectorAlgebraForDualDouble extends LinearAlgebraOps:
             elementAtDRV(v.dv, index, v.length)
         )
 
+    def fromDElements(nRows: Int, nCols: Int, elements: ScalarD*): MatrixD
+
+    override def fromElements(nRows: Int, nCols: Int, elements: Scalar*): Matrix =
+        createMatrix(
+            new DenseMatrix(nRows, nCols, elements.map(_.v).toArray), 
+            fromDElements(nRows, nCols, elements.map(_.dv): _*)
+        )
+
     def stackDRows(rows: RowVectorD*): MatrixD
 
     override def stackRows(rows: RowVector*): Matrix = 

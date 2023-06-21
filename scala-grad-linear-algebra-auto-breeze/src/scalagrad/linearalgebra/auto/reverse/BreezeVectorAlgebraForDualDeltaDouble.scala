@@ -211,4 +211,7 @@ object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualD
             DeltaRowVector.ElementWiseOps(v.v, v.dv, f)
         )
 
+    override def fromDElements(nRows: Int, nCols: Int, elements: ScalarD*): MatrixD =
+        DeltaMatrix.FromElements(elements.toVector)
+
     override def stackDRows(rows: RowVectorD*): MatrixD = DeltaMatrix.StackDRows(rows)

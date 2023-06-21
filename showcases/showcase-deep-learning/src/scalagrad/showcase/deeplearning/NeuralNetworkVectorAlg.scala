@@ -170,7 +170,7 @@ import spire.implicits.*
             initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, iters // 100_000
         )
         
-        val lalalala = DeriverBreezeReversePlan2()
+        val lalalala = DeriverBreezeReversePlan2
         import lalalala.given
         val op2 = BreezeVectorAlgebraForDualDeltaDoubleTotalOrder()
         val dLoss = ScalaGrad.derive(lossF(op2)(
