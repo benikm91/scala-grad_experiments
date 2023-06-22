@@ -149,7 +149,7 @@ lazy val showcaseDeepLearning = (project in file("./showcases/showcase-deep-lear
       scalaGradAutoFractional,
       scalaGradAutoSpire,
       scalaGradLinearAlgebraApi,
-      scalaGradLinearAlgebraAutoBreeze
+      scalaGradLinearAlgebraAutoBreeze,
     )
 
 // Show library usage

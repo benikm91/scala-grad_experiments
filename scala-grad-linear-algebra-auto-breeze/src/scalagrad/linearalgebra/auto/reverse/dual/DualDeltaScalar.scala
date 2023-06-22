@@ -4,7 +4,6 @@ import scalagrad.linearalgebra.api.dual.DualScalar
 import scalagrad.linearalgebra.auto.reverse.delta.DeltaScalar
 
 import scalagrad.api.CreateDual
-import DeltaState.deltaLet
 
 case class DualDeltaScalar[P: Fractional](
     val value: P,

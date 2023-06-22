@@ -60,7 +60,7 @@ object EvalTotalOrder:
                     dm.index = -1
                     results = evalMatrixStep(output, dm, intermediateResults, endIndex, results)
             }
-            // intermediateResults(i) = null // clear
+            intermediateResults(i) = null // clear
             i -= 1
         }
 
@@ -440,9 +440,20 @@ object EvalTotalOrder:
                         nextOutput(r, ::) := (dOps(v(r, ::)) * output(r, ::).t).t
                     }
                     evalMatrixStep(nextOutput, d, intermediateResults, endIndex, results)
-                case DeltaMatrix.RowWiseOpsForward(v, d, op) => ???
+                case DeltaMatrix.RowWiseOpsForward(v, d, op) => 
+                    import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan.rowVector2RowVector
+                    val dOps = rowVector2RowVector.derive(op)
+                    val nextOutput = DenseMatrix.zeros[Double](output.rows, v.cols)
+                    for (r <- 0 until v.rows) {
+                        nextOutput(r, ::) := (dOps(v(r, ::)) * output(r, ::).t).t
+                    }
+                    evalMatrixStep(nextOutput, d, intermediateResults, endIndex, results)
                 case DeltaMatrix.RowWiseOpsManual(v, d, dOp) => ???
-                case DeltaMatrix.ElementWiseOpsForward(v, d, op) => ???
+                case DeltaMatrix.ElementWiseOpsForward(v, dm, op) => 
+                    import scalagrad.linearalgebra.auto.forward.DeriverBreezeForwardPlan.scalar2Scalar
+                    val dOps = scalar2Scalar.derive(op)
+                    evalMatrixStep(output *:* v.map(dOps), dm, intermediateResults, endIndex, results)
+                    
 
     case class Results[P](
         scalars: Map[Int, P],

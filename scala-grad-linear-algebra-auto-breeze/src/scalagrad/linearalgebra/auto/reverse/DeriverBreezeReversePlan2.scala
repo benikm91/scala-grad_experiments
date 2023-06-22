@@ -133,8 +133,6 @@ object DeriverBreezeReversePlan2:
                     DualDeltaColumnVector(v2, zeroColumnVectorM(2)),
                     DualDeltaMatrix(m2, zeroMatrixM(3))
                 ).delta
-                // import scalagrad.linearalgebra.auto.reverse.delta.visualize.DeltaToGraphviz
-                // println(DeltaToGraphviz.countByType(delta))
                 val result = EvalTotalOrder.evalScalar(1.0, delta)
                 (result.columnVectors(0), result.matrices(1), result.columnVectors(2), result.matrices(3))
 

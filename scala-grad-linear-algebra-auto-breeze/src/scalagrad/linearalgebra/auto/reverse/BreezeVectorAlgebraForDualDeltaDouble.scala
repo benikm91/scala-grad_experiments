@@ -20,7 +20,6 @@ import scalagrad.linearalgebra.auto.reverse.dual.*
 import scalagrad.linearalgebra.auto.reverse.delta.*
 import scalagrad.linearalgebra.auto.forward.dual.{DualNumberScalar, DualNumberRowVector}
 import scalagrad.linearalgebra.api.dual.DualScalar
-import scalagrad.linearalgebra.auto.reverse.dual.DeltaState.deltaLet
 import scalagrad.api.CreateDual
 
 object BreezeVectorAlgebraForDualDeltaDouble extends BreezeVectorAlgebraForDualDouble:

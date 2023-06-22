@@ -20,7 +20,6 @@ import scalagrad.linearalgebra.auto.reverse.dual.*
 import scalagrad.linearalgebra.auto.reverse.delta.*
 import scalagrad.linearalgebra.auto.forward.dual.{DualNumberScalar, DualNumberRowVector}
 import scalagrad.linearalgebra.api.dual.DualScalar
-import scalagrad.linearalgebra.auto.reverse.dual.DeltaState.deltaLet
 import scalagrad.api.CreateDual
 
 final case class BreezeVectorAlgebraForDualDeltaDoubleTotalOrder(private var nextIndex: Int = 0) extends LinearAlgebraOps:
@@ -244,6 +243,10 @@ final case class BreezeVectorAlgebraForDualDeltaDoubleTotalOrder(private var nex
         val res = ops.elementWiseOpsM(m, f)
         markIndex(res)
 
+    def elementWiseOpsMForward(m: Matrix, f: DualNumberScalar[Double] => DualNumberScalar[Double]): Matrix =
+        val res = ops.elementWiseOpsMForward(m, f)
+        markIndex(res)
+
     override def columnWiseOpsM(m: Matrix, f: ColumnVector => ColumnVector): Matrix = 
         val res = ops.columnWiseOpsM(m, f)
         markIndex(res)
@@ -252,6 +255,10 @@ final case class BreezeVectorAlgebraForDualDeltaDoubleTotalOrder(private var nex
         val res = ops.rowWiseOpsM(m, f)
         markIndex(res)
 
+    def rowWiseOpsMForward(m: Matrix, op: DualNumberRowVector[Double] => DualNumberRowVector[Double]): Matrix =
+        val res = ops.rowWiseOpsMForward(m, op)
+        markIndex(res)
+    
     override def elementWiseOpsCV(v: ColumnVector, f: Scalar => Scalar): ColumnVector = 
         val res = ops.elementWiseOpsCV(v, f)
         markIndex(res)

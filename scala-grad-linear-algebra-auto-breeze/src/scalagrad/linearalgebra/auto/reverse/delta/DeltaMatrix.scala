@@ -2,6 +2,7 @@ package scalagrad.linearalgebra.auto.reverse.delta
 
 import breeze.linalg.{Transpose, DenseVector, DenseMatrix}
 import scalagrad.linearalgebra.auto.reverse.dual.{DualDeltaScalar, DualDeltaColumnVector, DualDeltaRowVector}
+import scalagrad.linearalgebra.auto.reverse.dualMonad.{DualDeltaScalarMonad, DualDeltaColumnVectorMonad, DualDeltaRowVectorMonad}
 import scalagrad.linearalgebra.auto.forward.dual.{DualNumberScalar, DualNumberRowVector}
 import scalagrad.api.linearalgebra.LinearAlgebraOps
 
@@ -34,6 +35,9 @@ enum DeltaMatrix[P](private[scalagrad] var index: Int = -1):
     case ElementWiseOpsForward(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualNumberScalar[P] => DualNumberScalar[P]) extends DeltaMatrix[P]
     case RowWiseOpsForward(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualNumberRowVector[P] => DualNumberRowVector[P]) extends DeltaMatrix[P]
     case RowWiseOpsManual(v: DenseMatrix[P], d: DeltaMatrix[P], dOp: breeze.linalg.Transpose[DenseVector[P]] => DenseMatrix[P]) extends DeltaMatrix[P]
+    // For Monad
+    case ElementWiseOpsMonad(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualDeltaScalarMonad[P] => DualDeltaScalarMonad[P]) extends DeltaMatrix[P]
+    case RowWiseOpsMonad(v: DenseMatrix[P], d: DeltaMatrix[P], op: DualDeltaRowVectorMonad[P] => DualDeltaRowVectorMonad[P]) extends DeltaMatrix[P]
 
 
 object DeltaMatrix:

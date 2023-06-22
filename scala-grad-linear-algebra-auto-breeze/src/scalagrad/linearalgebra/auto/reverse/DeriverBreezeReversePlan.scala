@@ -20,6 +20,7 @@ import scalagrad.linearalgebra.auto.reverse.delta.*
 import scalagrad.linearalgebra.auto.reverse.dual.*
 import scalagrad.linearalgebra.auto.reverse.eval.Eval
 import scalagrad.linearalgebra.auto.reverse.eval.Eval.AccumulatedResult
+import scalagrad.linearalgebra.auto.reverse.dualMonad.{DeltaMonad, DeltaId, DeltaState}
 
 object DeriverBreezeReversePlan:
 
@@ -27,21 +28,6 @@ object DeriverBreezeReversePlan:
         val res = DenseVector.zeros[Double](size)
         res(i) = 1.0
         res
-
-    def runDelta[P, D <: Deltas[P]](startId: DeltaId, deltaM: DeltaMonad[P, D]): Deltas[P] =
-        def wrap(body: Deltas[P], stateEntry: (DeltaId, Deltas[P])): Deltas[P] = 
-            body match
-                case ds: DeltaScalar[P] => DeltaScalar.Let(stateEntry._1, stateEntry._2, ds)
-                case dcv: DeltaColumnVector[P] => DeltaColumnVector.Let(stateEntry._1, stateEntry._2, dcv)
-                case drv: DeltaRowVector[P] => DeltaRowVector.Let(stateEntry._1, stateEntry._2, drv)
-                case dm: DeltaMatrix[P] => DeltaMatrix.Let(stateEntry._1, stateEntry._2, dm)
-        val (finalState, result) = deltaM.run(DeltaState.start[P](startId))
-        finalState.bindings.foldLeft(result)(wrap)
-    
-    // def zeroScalarM(key: Int) = DeltaMonad[Double, DeltaScalar[Double]](state => (state, DeltaScalar.Val(key)))
-    // def zeroColumnVectorM(key: Int) = DeltaMonad[Double, DeltaColumnVector[Double]](state => (state, DeltaColumnVector.Val(key)))
-    // def zeroRowVectorM(key: Int) = DeltaMonad[Double, DeltaRowVector[Double]](state => (state, DeltaRowVector.Val(key)))
-    // def zeroMatrixM(key: Int) = DeltaMonad[Double, DeltaMatrix[Double]](state => (state, DeltaMatrix.Val(key)))
 
     def zeroScalarM(key: Int) = DeltaScalar.Val[Double](key)
     def zeroColumnVectorM(key: Int) = DeltaColumnVector.Val[Double](key)
@@ -149,8 +135,6 @@ object DeriverBreezeReversePlan:
                     DualDeltaColumnVector(v2, zeroColumnVectorM(2)),
                     DualDeltaMatrix(m2, zeroMatrixM(3))
                 ).delta
-                // import scalagrad.linearalgebra.auto.reverse.delta.visualize.DeltaToGraphviz
-                 // println(DeltaToGraphviz.countByType(delta))
                 val result = Eval.evalScalar(1.0, delta, Eval.AccumulatedResult.empty[Double])
                 (result.columnVectors(0), result.matrices(1), result.columnVectors(2), result.matrices(3))
 

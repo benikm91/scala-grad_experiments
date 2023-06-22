@@ -15,13 +15,12 @@ import scala.math.Fractional
 import scala.runtime.Tuples
 import scalagrad.auto.forward.dual.DualNumber
 import scalagrad.linearalgebra.auto.reverse.delta.*
-import scalagrad.linearalgebra.auto.reverse.dual.*
+import scalagrad.linearalgebra.auto.reverse.dualMonad.*
 
-object Eval:
+object EvalMonad:
 
     def evalDeltas(id: Int, rhs: Deltas[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
         rhs match
-            // TODO why no lookup in input?
             case ds: DeltaScalar[Double] => 
                 evalScalar(input.scalars(id), ds, input.copy(
                     scalars = input.scalars - id
@@ -49,7 +48,7 @@ object Eval:
                             v.fold(output)(_ + output)
                         ))
                 )
-            case DeltaScalar.Let(id, rhs, body) =>             
+            case DeltaScalar.Let(id, rhs, body) =>
                 val nextInput = evalScalar(output, body, input)
                 evalDeltas(id, rhs, nextInput)
             case DeltaScalar.MultiplyVV(m1: DeltaRowVector[Double], m2: DeltaColumnVector[Double]) => ???
@@ -79,13 +78,30 @@ object Eval:
                 )
             case DeltaScalar.Div(d: DeltaScalar[Double], scale: Double) =>
                 evalScalar(output / scale, d, input)
-            case DeltaScalar.Scale(scale: Double, ds: DeltaScalar[Double]) =>
-                evalScalar(output * scale, ds, input)
-            case DeltaScalar.ElementAtM(dm: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) =>
-                val newOutput = DenseMatrix.zeros[Double](nRows, nCols)
-                newOutput(row, col) = output
-                evalMatrix(newOutput, dm, input)
+            case DeltaScalar.Scale(scale: Double, d: DeltaScalar[Double]) =>
+                evalScalar(output * scale, d, input)
+            case DeltaScalar.ElementAtM(m: DeltaMatrix[Double], row: Int, col: Int, nRows: Int, nCols: Int) => 
+                val id = m.asInstanceOf[DeltaMatrix.Val[Double]].id
+                input.copy(
+                    matrices = 
+                        input.matrices.updatedWith(id)(ov => 
+                            val v = ov.getOrElse(DenseMatrix.zeros[Double](nRows, nCols))
+                            v(row, col) += output
+                            Some(v)
+                        )
+                )
+                ???
             case DeltaScalar.ElementAtCV(delta: DeltaColumnVector[Double], index: Int, deltaLength: Int) =>
+                val id = delta.asInstanceOf[DeltaColumnVector.Val[Double]].id
+                // input.copy(
+                //     columnVectors = 
+                //         input.columnVectors.updatedWith(id)(ov => 
+                //             val v = ov.getOrElse(DenseVector.zeros[Double](deltaLength))
+                //             v(index) += output
+                //             Some(v)
+                //         )
+                // )
+                // Do it inefficient for comparision with reverse-mode
                 val newOutput = DenseVector.zeros[Double](deltaLength)
                 newOutput(index) = output
                 evalColumnVector(newOutput, delta, input)
@@ -101,6 +117,7 @@ object Eval:
                             v
                         )))
                 )
+                ???
 
     def evalColumnVector(output: DenseVector[Double], delta: DeltaColumnVector[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
         delta match
@@ -154,10 +171,10 @@ object Eval:
                     val (dScalar, index) = t
                     evalScalar(output(index), dScalar, input)
                 )
-            case DeltaColumnVector.ElementWiseOps(v, d, op) =>
-                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
+            case DeltaColumnVector.ElementWiseOpsMonad(v, d, op) =>
+                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlanMonad.scalar2Scalar
                 val dOps = scalar2Scalar.derive(op) // TODO fix: Here a new "context" is opened. But op can depend on Values of current context...
-                evalColumnVector(output *:* v.map(dOps), d, input)
+                evalColumnVector(output *:*  v.map(dOps), d, input)
 
     def evalRowVector(output: Transpose[DenseVector[Double]], delta: DeltaRowVector[Double], input: AccumulatedResult[Double]): AccumulatedResult[Double] = 
         delta match
@@ -208,6 +225,16 @@ object Eval:
                     evalScalar(output(index), dScalar, input)
                 )
             case DeltaRowVector.RowAtM(dm, row, nRows, nCols) =>
+                // val id = dm.asInstanceOf[DeltaMatrix.Val[Double]].id
+                // input.copy(
+                //     matrices = 
+                //         input.matrices.updatedWith(id)(ov => 
+                //             val v = ov.getOrElse(DenseMatrix.zeros[Double](nRows, nCols))
+                //             v(row, ::) += output
+                //             Some(v)
+                //         )
+                // )
+                // Do it inefficient for comparision with reverse-mode
                 val newOutput = DenseMatrix.zeros[Double](nRows, nCols)
                 newOutput(row, ::) := output
                 evalMatrix(newOutput, dm, input)
@@ -289,12 +316,12 @@ object Eval:
                 )
             case DeltaMatrix.Div(dm, s) =>
                 evalMatrix(output / s, dm, input)
-            case DeltaMatrix.ElementWiseOps(v, d, op) =>
-                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.scalar2Scalar
+            case DeltaMatrix.ElementWiseOpsMonad(v, d, op) =>
+                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlanMonad.scalar2Scalar
                 val dOps = scalar2Scalar.derive(op)
                 evalMatrix(output *:* v.map(dOps), d, input)
-            case DeltaMatrix.RowWiseOps(v, d, op) => 
-                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlan.rowVector2RowVector
+            case DeltaMatrix.RowWiseOpsMonad(v, d, op) => 
+                import scalagrad.linearalgebra.auto.reverse.DeriverBreezeReversePlanMonad.rowVector2RowVector
                 val dOps = rowVector2RowVector.derive(op)
                 val nextOutput = DenseMatrix.zeros[Double](output.rows, v.cols)
                 for (r <- 0 until v.rows) {

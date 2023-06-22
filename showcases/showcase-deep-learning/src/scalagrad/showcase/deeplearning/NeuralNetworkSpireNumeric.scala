@@ -112,7 +112,7 @@ import scalagrad.auto.forward.DeriverForwardPlan
     val initYHat = xs.map(x => neuralNetwork(x, initFirstW0, initFirstWs, initLastW0, initLastWs))
     println(f"${Math.sqrt(loss(ys, initYHat))}g  -- RMSE with initial weights")
     
-    val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10000) _
+    val gradientDescent = gradientDescentF(xs_ss, ys_ss, initFirstW0, initFirstWs, initLastW0, initLastWs, 0.01, 10_000) _
 
     time {
         import scalagrad.auto.forward.dual.DualNumber

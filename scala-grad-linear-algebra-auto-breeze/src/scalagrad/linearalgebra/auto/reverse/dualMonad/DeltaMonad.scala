@@ -1,4 +1,4 @@
-package scalagrad.linearalgebra.auto.reverse.dual
+package scalagrad.linearalgebra.auto.reverse.dualMonad
 
 import scalagrad.linearalgebra.auto.reverse.delta.*
 
@@ -16,7 +16,8 @@ case class DeltaMonad[P, A](private val next: DeltaState[P] => (DeltaState[P], A
             f(a).run(nextState)
         )
 
-    def run(state: DeltaState[P]): (DeltaState[P], A) = next(state)
+    def run(state: DeltaState[P]): (DeltaState[P], A) = 
+        next(state)
 
 
 object DeltaMonad:

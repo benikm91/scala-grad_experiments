@@ -52,6 +52,7 @@ object DeltaTraverse:
             case e1: DeltaColumnVector.ElementWiseScale[P] => e1 #:: traverseColumnVector(e1.d)
             case e2: DeltaColumnVector.FromElements[P] => e2 #:: e2.values.to(LazyList).flatMap(traverseScalar)
             case e3: DeltaColumnVector.ElementWiseOps[P] => e3 #:: traverseColumnVector(e3.d)
+            case e3: DeltaColumnVector.ElementWiseOpsMonad[P] => e3 #:: traverseColumnVector(e3.d)
         }
 
     def traverseRowVector[P](drv: DeltaRowVector[P]): LazyList[Deltas[P]] = 
@@ -105,5 +106,7 @@ object DeltaTraverse:
             case e: DeltaMatrix.ElementWiseOpsForward[P] => e #:: traverseMatrix(e.d)
             case r: DeltaMatrix.RowWiseOpsForward[P] => r #:: traverseMatrix(r.d)
             case r: DeltaMatrix.RowWiseOpsManual[P] => r #:: traverseMatrix(r.d)
+            case r: DeltaMatrix.ElementWiseOpsMonad[P] => r #:: traverseMatrix(r.d)
+            case r: DeltaMatrix.RowWiseOpsMonad[P] => r #:: traverseMatrix(r.d)
         }
 

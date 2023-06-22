@@ -2,6 +2,7 @@ package scalagrad.linearalgebra.auto.reverse.delta
 
 import breeze.linalg.{DenseVector, DenseMatrix}
 import scalagrad.linearalgebra.auto.reverse.dual.DualDeltaScalar
+import scalagrad.linearalgebra.auto.reverse.dualMonad.DualDeltaScalarMonad
 
 enum DeltaColumnVector[P](private[scalagrad] var index: Int = -1):
     case Zero(x: P) extends DeltaColumnVector[P]
@@ -20,6 +21,8 @@ enum DeltaColumnVector[P](private[scalagrad] var index: Int = -1):
     case ElementWiseScale(v: DenseVector[P], d: DeltaColumnVector[P]) extends DeltaColumnVector[P]
     case FromElements(values: Vector[DeltaScalar[P]]) extends DeltaColumnVector[P]
     case ElementWiseOps(v: DenseVector[P], d: DeltaColumnVector[P], op: DualDeltaScalar[P] => DualDeltaScalar[P]) extends DeltaColumnVector[P]
+    // Monad
+    case ElementWiseOpsMonad(v: DenseVector[P], d: DeltaColumnVector[P], op: DualDeltaScalarMonad[P] => DualDeltaScalarMonad[P]) extends DeltaColumnVector[P]
 
 
 object DeltaColumnVector:
