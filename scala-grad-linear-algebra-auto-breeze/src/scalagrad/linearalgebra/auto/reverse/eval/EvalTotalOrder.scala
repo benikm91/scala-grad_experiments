@@ -21,6 +21,7 @@ import scalagrad.linearalgebra.auto.reverse.dual.*
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+// TODO change to LinearAlgebraOps
 object EvalTotalOrder:
     
     enum EvalStepResult:
