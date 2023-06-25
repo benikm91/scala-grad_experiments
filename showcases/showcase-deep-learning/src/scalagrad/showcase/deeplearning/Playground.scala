@@ -4,7 +4,10 @@ import scalagrad.linearalgebra.auto.reverse.delta.Deltas
 import scalagrad.linearalgebra.auto.forward.dual.*
 
 import breeze.linalg.*
+
+import scalagrad.api.linearalgebra.LinearAlgebraOps
 import scalagrad.linearalgebra.auto.reverse.delta.DeltaScalar
+import scalagrad.linearalgebra.auto.forward.BreezeVectorAlgebraForDualNumberDouble
 
 type DualTuple[T <: Tuple] = T match
     case DualNumberScalar[Double] *: t => DualTuple[t]
@@ -31,20 +34,6 @@ type ToDual[T] = T match
 
 @main
 def aPlayground = 
-
-    def liftScalar(x: Double) = DualNumberScalar(x, 0.0)
-    def liftColumnVector(x: DenseVector[Double]) = DualNumberColumnVector(x, DenseVector.zeros[Double](x.length))
-    def liftRowVector(x: Transpose[DenseVector[Double]]) = DualNumberRowVector(x, DenseVector.zeros[Double](x.inner.length).t)
-    def liftMatrix(x: DenseMatrix[Double]) = DualNumberMatrix(x, DenseMatrix.zeros[Double](x.rows, x.cols))
-        
-
-    val scalar = DualNumberScalar[Double](1.0, 0.0)
-    val rowVector = DualNumberRowVector[Double](DenseVector(1.0d, 2.0d).t, DenseVector.zeros[Double](2).t)
-
-    def f(x: DualNumberScalar[Double], y: DualNumberColumnVector[Double]): DualNumberScalar[Double] = x
-    def f2(x: DualNumberScalar[Double], y: DualNumberMatrix[Double]): DualNumberScalar[Double] = x
-
-    type Values = Double | DenseVector[Double] | Transpose[DenseVector[Double]] | DenseMatrix[Double]
 
     def derive[T <: Tuple : DualTuple](f: T => DualNumberScalar[Double])(t: FromDuals[T]): FromDuals[T] = 
         def zipDelta(t: FromDuals[T]): T = 
@@ -111,8 +100,19 @@ def aPlayground =
         val res = forwardPlan(zeros)
         res
 
-    val df = derive(f.tupled)
-    val df2 = derive(f2.tupled)
+    def f(ops: LinearAlgebraOps)(x: ops.Scalar, y: ops.ColumnVector): ops.Scalar = 
+        import ops.*
+        (x * y).sum
+
+    def f2(ops: LinearAlgebraOps)(x: ops.Scalar, y: ops.Matrix): ops.Scalar =
+        import ops.*
+        (x * y).sum
+        
+    val fDual = f(BreezeVectorAlgebraForDualNumberDouble)
+    val df = derive(fDual.tupled)
+
+    val f2Dual = f2(BreezeVectorAlgebraForDualNumberDouble)
+    val df2 = derive(f2Dual.tupled)
 
     println(df(1.0, DenseVector(1.0d, 2.0d)))
     println(df2(1.0, new DenseMatrix(2, 2, Array(1.0d, 2.0d, 1.0d, 2.0d))))
