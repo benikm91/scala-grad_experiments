@@ -36,7 +36,7 @@ type ToDual[T] = T match
 def aPlayground = 
 
     def derive[T <: Tuple : DualTuple](f: T => DualNumberScalar[Double])(t: FromDuals[T]): FromDuals[T] = 
-        def zipDelta(t: FromDuals[T]): T = 
+        def toZeros(t: FromDuals[T]): T = 
             t.map[[X] =>> ToDual[X]]([T] => (t: T) => t match {
                 case x: Double => DualNumberScalar[Double](x, 0.0)
                 case x: DenseVector[Double] => DualNumberColumnVector(x, DenseVector.zeros[Double](x.length))
@@ -55,15 +55,7 @@ def aPlayground =
                 res(i % mrows, i / mrows) = 1.0
                 res
             def appendTopAndBottomTo(top: Tuple, x: Any, bottom: Tuple) = 
-                top match
-                    case _: EmptyTuple => 
-                        bottom match
-                            case _: EmptyTuple => x
-                            case bottom => x *: bottom
-                    case top => 
-                        bottom match
-                            case _: EmptyTuple => top :* x
-                            case bottom => top :* x :* bottom
+                top ++ (x *: bottom)
             zerosWithIndex.map[[X] =>> Any]([U] => (t: U) => t match {
                 case (x: DualNumberScalar[Double], y: Int) => 
                     val (top, bottom) = zeros.splitAt(y)
@@ -96,9 +88,9 @@ def aPlayground =
                         }
                     new DenseMatrix(x.v.rows, x.v.cols, res.toArray)
             }).asInstanceOf[FromDuals[T]]
-        val zeros = zipDelta(t)
-        val res = forwardPlan(zeros)
-        res
+        forwardPlan(
+            toZeros(t)
+        )
 
     def f(ops: LinearAlgebraOps)(x: ops.Scalar, y: ops.ColumnVector): ops.Scalar = 
         import ops.*
@@ -108,11 +100,29 @@ def aPlayground =
         import ops.*
         (x * y).sum
         
+    def f3(ops: LinearAlgebraOps)(
+        x1: ops.Scalar,
+        x2: ops.Scalar, 
+        x3: ops.Scalar,
+        x4: ops.Scalar,
+        x5: ops.Scalar,
+        x6: ops.Scalar,
+        x7: ops.Scalar,
+        x8: ops.Scalar,
+        x9: ops.Scalar,
+    ): ops.Scalar =
+        import ops.*
+        x1 * x2 * x3 * x4 * x5 * x6 * x7 * x8 * x9
+        
     val fDual = f(BreezeVectorAlgebraForDualNumberDouble)
     val df = derive(fDual.tupled)
 
     val f2Dual = f2(BreezeVectorAlgebraForDualNumberDouble)
     val df2 = derive(f2Dual.tupled)
 
+    val f3Dual = f3(BreezeVectorAlgebraForDualNumberDouble)
+    val df3 = derive(f3Dual.tupled)
+
     println(df(1.0, DenseVector(1.0d, 2.0d)))
     println(df2(1.0, new DenseMatrix(2, 2, Array(1.0d, 2.0d, 1.0d, 2.0d))))
+    println(df3(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0))
